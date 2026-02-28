@@ -546,7 +546,7 @@
   }
 
   // ── Render Tokens ──
-  async function renderTokens(tokenAccounts, prices) {
+  async function renderTokens(tokenAccounts, prices, cacheData={}) {
     const list   = document.getElementById('tokenList');
     const solBal = parseFloat(document.getElementById('solBalance').textContent) || 0;
     const solPx  = prices['So11111111111111111111111111111111111111112']?.price || 0;
@@ -623,13 +623,20 @@
         'SOL '+fmtUsd(solUsd)+' · Token '+fmtUsd(tokenTotalUsd);
     }
 
+    // Cache befüllen
+    cacheData.tokenListHtml   = list.innerHTML;
+    cacheData.tokenCount      = count;
+    cacheData.assetCount      = count;
+    cacheData.tokenTotalUsd   = tokenTotalUsd;
+    cacheData.portfolioTotal  = portfolioTotal;
+    cacheData.portfolioSub    = 'SOL '+fmtUsd(solUsd)+' · Token '+fmtUsd(tokenTotalUsd);
     return { solUsd, tokenTotalUsd, portfolioTotal };
   }
 
   // ── Render Transactions ──
-  function renderTxs(txs) {
+  function renderTxs(txs, cacheData={}) {
     const list = document.getElementById('txList');
-    if (!txs.length) { list.innerHTML=`<li class="empty-state">Keine Transaktionen gefunden</li>`; return; }
+    if (!txs.length) { list.innerHTML=`<li class="empty-state">Keine Transaktionen gefunden</li>`; cacheData.txListHtml=list.innerHTML; return; }
 
     const typeMap = {
       SWAP:      {icon:'⇄',cls:'swap',  label:'Swap'},
@@ -673,18 +680,21 @@
         </li>`;
     }
     list.innerHTML=html;
+    cacheData.txListHtml=html;
     document.getElementById('txPanelCount').textContent=txs.length;
   }
 
   // ── Render Perp Positions ──
-  function renderPerpPositions(positions) {
+  function renderPerpPositions(positions, cacheData={}) {
     const list = document.getElementById('perpList');
 
     if (!positions||positions.length===0) {
       list.innerHTML=`<li class="empty-state">Keine offenen Perp-Positionen</li>`;
-      document.getElementById('perpCount').textContent='0';
+      cacheData.perpListHtml='<li class="empty-state">Keine offenen Perp-Positionen</li>';
+      document.getElementById('perpCount').textContent='0'; cacheData.perpCount=0;
       document.getElementById('perpPanelCount').textContent='0';
       document.getElementById('perpPnl').textContent='Keine offenen Positionen';
+      cacheData.perpPnlHtml='Keine offenen Positionen';
       return;
     }
 
@@ -741,17 +751,21 @@
     document.getElementById('perpCount').textContent=positions.length;
     document.getElementById('perpPanelCount').textContent=positions.length;
     const pnlStyle=totalPnl>=0?'color:var(--up)':'color:var(--down)';
-    document.getElementById('perpPnl').innerHTML=
-      `<span style="${pnlStyle}">PnL: ${totalPnl>=0?'+':''}${fmtUsd(totalPnl)}</span>`;
+    const pnlHtml=`<span style="${pnlStyle}">PnL: ${totalPnl>=0?'+':''}${fmtUsd(totalPnl)}</span>`;
+    document.getElementById('perpPnl').innerHTML=pnlHtml;
+    cacheData.perpListHtml=html;
+    cacheData.perpCount=positions.length;
+    cacheData.perpPnlHtml=pnlHtml;
   }
 
   // ── Render Limit Orders ──
-  async function renderLimitOrders(orders) {
+  async function renderLimitOrders(orders, cacheData={}) {
     const list = document.getElementById('ordersList');
 
     if (!orders||orders.length===0) {
       list.innerHTML=`<li class="empty-state">Keine offenen Limit Orders</li>`;
-      document.getElementById('orderCount').textContent='0';
+      cacheData.ordersListHtml='<li class="empty-state">Keine offenen Limit Orders</li>';
+      document.getElementById('orderCount').textContent='0'; cacheData.orderCount=0;
       document.getElementById('ordersPanelCount').textContent='0';
       return;
     }
@@ -823,8 +837,75 @@
     }
 
     list.innerHTML=html;
+    cacheData.ordersListHtml=html;
+    cacheData.orderCount=orders.length;
     document.getElementById('orderCount').textContent=orders.length;
     document.getElementById('ordersPanelCount').textContent=orders.length;
+  }
+
+  // ── Cache ──
+  const CACHE_KEY = 'krypton_wallet_cache';
+
+  function saveCache(data) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ts: Date.now(), data}));
+    } catch(e) {}
+  }
+
+  function loadCache() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const {ts, data} = JSON.parse(raw);
+      // Cache bis zu 5 Minuten gültig für Sofortanzeige
+      if (Date.now() - ts < 5 * 60 * 1000) return data;
+    } catch(e) {}
+    return null;
+  }
+
+  function applyCache(cached) {
+    if (!cached) return;
+    // SOL
+    if (cached.solBalance != null) {
+      document.getElementById('solBalance').textContent = cached.solBalance.toFixed(4)+' SOL';
+      if (cached.solUsd) document.getElementById('solUsd').textContent = '≈ '+fmtUsd(cached.solUsd);
+      window._solPrice = cached.solPrice || 0;
+    }
+    // Portfolio
+    if (cached.portfolioTotal) {
+      document.getElementById('portfolioTotal').textContent = fmtUsd(cached.portfolioTotal);
+      if (cached.portfolioSub) document.getElementById('portfolioSub').textContent = cached.portfolioSub;
+    }
+    if (cached.tokenTotalUsd != null)
+      document.getElementById('tokenTotalUsd').textContent = fmtUsd(cached.tokenTotalUsd)+' gesamt';
+    // Counts
+    if (cached.tokenCount != null) document.getElementById('tokenCount').textContent = cached.tokenCount;
+    if (cached.txCount    != null) document.getElementById('txPanelCount').textContent = cached.txCount;
+    if (cached.perpCount  != null) {
+      document.getElementById('perpCount').textContent = cached.perpCount;
+      document.getElementById('perpPanelCount').textContent = cached.perpCount;
+    }
+    if (cached.orderCount != null) {
+      document.getElementById('orderCount').textContent = cached.orderCount;
+      document.getElementById('ordersPanelCount').textContent = cached.orderCount;
+    }
+    // Listen
+    if (cached.tokenListHtml)  document.getElementById('tokenList').innerHTML  = cached.tokenListHtml;
+    if (cached.txListHtml)     document.getElementById('txList').innerHTML     = cached.txListHtml;
+    if (cached.perpListHtml)   document.getElementById('perpList').innerHTML   = cached.perpListHtml;
+    if (cached.ordersListHtml) document.getElementById('ordersList').innerHTML = cached.ordersListHtml;
+    if (cached.perpPnlHtml)    document.getElementById('perpPnl').innerHTML    = cached.perpPnlHtml;
+    if (cached.assetCount)     document.getElementById('assetCount').textContent = cached.assetCount;
+  }
+
+  // ── Update-Indikator ──
+  function showUpdating(active) {
+    const badge = document.querySelector('.live-badge');
+    if (active) {
+      badge.style.opacity = '0.5';
+    } else {
+      badge.style.opacity = '1';
+    }
   }
 
   // ── Main ──
@@ -835,32 +916,41 @@
     document.getElementById('currentAddress').innerHTML =
       `Wallet: <strong>${addr}</strong> · <a class="explorer-link" href="https://solscan.io/account/${addr}" target="_blank">↗ Solscan</a>`;
 
-    ['solBalance','tokenCount','perpCount','orderCount','portfolioTotal'].forEach(id=>{
-      document.getElementById(id).textContent='…';
-    });
-    document.getElementById('solUsd').textContent='…';
-    document.getElementById('perpPnl').textContent='…';
-
-    const sk=skRow();
-    document.getElementById('tokenList').innerHTML  = sk+sk+sk;
-    document.getElementById('txList').innerHTML     = sk+sk+sk;
-    document.getElementById('perpList').innerHTML   = sk+sk;
-    document.getElementById('ordersList').innerHTML = sk+sk;
-
+    // Panels sofort einblenden
     ['statsRow','assetsPanel','txPanel','perpPanel','ordersPanel'].forEach(id=>{
       document.getElementById(id).classList.add('loaded');
     });
 
+    // ── Schritt 1: Cache sofort anzeigen ──
+    const cached = loadCache();
+    if (cached) {
+      applyCache(cached);
+      showUpdating(true);
+    } else {
+      // Kein Cache: Skeletons zeigen
+      ['solBalance','tokenCount','perpCount','orderCount','portfolioTotal'].forEach(id=>{
+        document.getElementById(id).textContent='…';
+      });
+      document.getElementById('solUsd').textContent='…';
+      document.getElementById('perpPnl').textContent='…';
+      const sk=skRow();
+      document.getElementById('tokenList').innerHTML  = sk+sk+sk;
+      document.getElementById('txList').innerHTML     = sk+sk+sk;
+      document.getElementById('perpList').innerHTML   = sk+sk;
+      document.getElementById('ordersList').innerHTML = sk+sk;
+    }
+
+    const cacheData = {};
+
     try {
-      const [solBalance, tokenAccounts, txs, perpPositions, limitOrders] = await Promise.all([
+      // ── Schritt 2: SOL + Token zuerst (schnell) ──
+      const [solBalance, tokenAccounts] = await Promise.all([
         getSolBalance(addr),
-        getTokenAccounts(addr),
-        getTransactions(addr),
-        getPerpPositions(addr),
-        getLimitOrders(addr)
+        getTokenAccounts(addr)
       ]);
 
       document.getElementById('solBalance').textContent = solBalance.toFixed(4)+' SOL';
+      cacheData.solBalance = solBalance;
 
       const mints = [
         'So11111111111111111111111111111111111111112',
@@ -870,22 +960,44 @@
 
       const solPx = prices['So11111111111111111111111111111111111111112']?.price;
       window._solPrice = solPx || 0;
+      cacheData.solPrice = solPx || 0;
+      const solUsdVal = solPx ? solBalance * solPx : 0;
+      cacheData.solUsd = solUsdVal;
       document.getElementById('solUsd').textContent = solPx
-        ? `≈ ${fmtUsd(solBalance*solPx)}` : '– USD';
+        ? `≈ ${fmtUsd(solUsdVal)}` : '– USD';
+
+      // Token rendern – sofort sichtbar
+      await renderTokens(tokenAccounts, prices, cacheData);
+
+      // ── Schritt 3: Transaktionen + Jupiter parallel nachladen ──
+      const [txs, perpPositions, limitOrders] = await Promise.all([
+        getTransactions(addr),
+        getPerpPositions(addr),
+        getLimitOrders(addr)
+      ]);
 
       document.getElementById('txPanelCount').textContent = txs.length;
+      cacheData.txCount = txs.length;
 
-      await renderTokens(tokenAccounts, prices);
-      renderTxs(txs);
-      renderPerpPositions(perpPositions);
-      await renderLimitOrders(limitOrders);
+      renderTxs(txs, cacheData);
+      renderPerpPositions(perpPositions, cacheData);
+      await renderLimitOrders(limitOrders, cacheData);
+
+      // Cache speichern
+      saveCache(cacheData);
 
     } catch(e) {
       console.error(e);
-      showError('Fehler beim Laden: '+e.message);
-      ['tokenList','txList','perpList','ordersList'].forEach(id=>{
-        document.getElementById(id).innerHTML=`<li class="empty-state">Fehler beim Laden</li>`;
-      });
+      if (!cached) {
+        showError('Fehler beim Laden: '+e.message);
+        ['tokenList','txList','perpList','ordersList'].forEach(id=>{
+          document.getElementById(id).innerHTML=`<li class="empty-state">Fehler beim Laden</li>`;
+        });
+      } else {
+        showError('Aktualisierung fehlgeschlagen – zeige gecachte Daten');
+      }
+    } finally {
+      showUpdating(false);
     }
   }
 

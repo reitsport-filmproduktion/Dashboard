@@ -16,7 +16,6 @@
       --accent3: #f6c90e;
       --text: #e8eaf0;
       --muted: #5a6080;
-      --danger: #ef4444;
       --up: #10b981;
       --down: #ef4444;
     }
@@ -31,7 +30,6 @@
       overflow-x: hidden;
     }
 
-    /* ── Background ── */
     body::before {
       content: '';
       position: fixed;
@@ -49,325 +47,254 @@
       justify-content: space-between;
       padding: 1.5rem 2.5rem;
       border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
+      position: sticky; top: 0;
       background: rgba(10,12,18,.88);
       backdrop-filter: blur(16px);
       z-index: 100;
     }
-
-    .logo {
-      font-family: 'Space Mono', monospace;
-      font-weight: 700;
-      font-size: 1.1rem;
-      letter-spacing: -.02em;
-      color: var(--text);
-    }
+    .logo { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 1.1rem; }
     .logo span { color: var(--accent2); }
-
     .live-badge {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      font-family: 'Space Mono', monospace;
-      font-size: .72rem;
+      display: flex; align-items: center; gap: .5rem;
+      font-family: 'Space Mono', monospace; font-size: .72rem;
       color: var(--accent2);
       background: rgba(6,214,160,.08);
       border: 1px solid rgba(6,214,160,.25);
-      border-radius: 100px;
-      padding: .3rem .8rem;
+      border-radius: 100px; padding: .3rem .8rem;
     }
     .live-dot {
-      width: 7px; height: 7px;
-      background: var(--accent2);
-      border-radius: 50%;
-      animation: pulse 1.6s ease-in-out infinite;
+      width: 7px; height: 7px; background: var(--accent2);
+      border-radius: 50%; animation: pulse 1.6s ease-in-out infinite;
     }
-    @keyframes pulse {
-      0%,100% { opacity: 1; transform: scale(1); }
-      50% { opacity: .4; transform: scale(.7); }
-    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
 
-    /* ── Main Layout ── */
+    /* ── Layout ── */
     main { max-width: 1180px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
 
-    /* ── Wallet Input ── */
-    .wallet-input-section {
-      margin-bottom: 2.5rem;
-      animation: fadeUp .5s ease both;
-    }
+    .wallet-input-section { margin-bottom: 2.5rem; animation: fadeUp .5s ease both; }
     .wallet-input-label {
-      font-size: .75rem;
-      font-family: 'Space Mono', monospace;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: .12em;
-      margin-bottom: .6rem;
+      font-size: .75rem; font-family: 'Space Mono', monospace;
+      color: var(--muted); text-transform: uppercase;
+      letter-spacing: .12em; margin-bottom: .6rem;
     }
-
     .current-address {
-      font-family: 'Space Mono', monospace;
-      font-size: .8rem;
-      color: var(--text);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: .85rem 1.2rem;
-      word-break: break-all;
+      font-family: 'Space Mono', monospace; font-size: .8rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: .85rem 1.2rem; word-break: break-all;
     }
     .current-address strong { color: var(--accent2); }
 
-    /* ── Error ── */
     .error-box {
-      background: rgba(239,68,68,.08);
-      border: 1px solid rgba(239,68,68,.3);
-      border-radius: 10px;
-      padding: 1rem 1.2rem;
-      color: #fca5a5;
-      font-size: .85rem;
-      margin-bottom: 1.5rem;
-      display: none;
+      background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.3);
+      border-radius: 10px; padding: 1rem 1.2rem;
+      color: #fca5a5; font-size: .85rem;
+      margin-bottom: 1.5rem; display: none;
     }
     .error-box.show { display: block; }
 
-    /* ── Stats Row ── */
+    /* ── Stats ── */
     .stats-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-      animation: fadeUp .5s .1s ease both;
-      opacity: 0;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+      animation: fadeUp .5s .1s ease both; opacity: 0;
     }
     .stats-row.loaded { opacity: 1; }
-
     .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1.3rem 1.5rem;
-      position: relative;
-      overflow: hidden;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.3rem 1.5rem; position: relative; overflow: hidden;
     }
     .stat-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
       background: linear-gradient(90deg, var(--accent), var(--accent2));
-      border-radius: 2px 2px 0 0;
     }
     .stat-label {
-      font-size: .72rem;
-      font-family: 'Space Mono', monospace;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      margin-bottom: .5rem;
+      font-size: .72rem; font-family: 'Space Mono', monospace;
+      color: var(--muted); text-transform: uppercase;
+      letter-spacing: .1em; margin-bottom: .5rem;
     }
-    .stat-value {
-      font-size: 1.7rem;
-      font-weight: 800;
-      line-height: 1;
-    }
-    .stat-sub {
-      font-size: .75rem;
-      color: var(--muted);
-      margin-top: .3rem;
-      font-family: 'Space Mono', monospace;
-    }
+    .stat-value { font-size: 1.7rem; font-weight: 800; line-height: 1; }
+    .stat-sub { font-size: .75rem; color: var(--muted); margin-top: .3rem; font-family: 'Space Mono', monospace; }
 
-    /* ── Grid ── */
+    /* ── Grids ── */
     .dashboard-grid {
-      display: grid;
-      grid-template-columns: 1fr 1.1fr;
-      gap: 1.5rem;
+      display: grid; grid-template-columns: 1fr 1.1fr;
+      gap: 1.5rem; margin-bottom: 1.5rem;
     }
-    @media (max-width: 800px) { .dashboard-grid { grid-template-columns: 1fr; } }
+    .dashboard-grid-full {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+    }
+    @media (max-width: 800px) {
+      .dashboard-grid, .dashboard-grid-full { grid-template-columns: 1fr; }
+    }
 
     /* ── Panel ── */
     .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-      animation: fadeUp .5s .2s ease both;
-      opacity: 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+      animation: fadeUp .5s .2s ease both; opacity: 0;
     }
     .panel.loaded { opacity: 1; }
     .panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1.2rem 1.5rem;
-      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border);
     }
     .panel-title {
-      font-size: .85rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: var(--muted);
+      font-size: .85rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em;
+      color: var(--muted); display: flex; align-items: center; gap: .5rem;
+    }
+    .jup-badge {
+      background: linear-gradient(135deg,#c084fc,#818cf8);
+      color:#fff; font-size:.6rem; padding:.15rem .45rem;
+      border-radius:4px; font-weight:700; letter-spacing:.05em;
     }
     .panel-count {
-      font-family: 'Space Mono', monospace;
-      font-size: .72rem;
-      background: var(--surface2);
-      border-radius: 100px;
-      padding: .2rem .6rem;
-      color: var(--accent2);
+      font-family: 'Space Mono', monospace; font-size: .72rem;
+      background: var(--surface2); border-radius: 100px;
+      padding: .2rem .6rem; color: var(--accent2);
     }
 
     /* ── Token List ── */
     .token-list { list-style: none; }
     .token-item {
-      display: flex;
-      align-items: center;
-      gap: .9rem;
-      padding: .9rem 1.5rem;
-      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .9rem;
+      padding: .9rem 1.5rem; border-bottom: 1px solid var(--border);
       transition: background .15s;
     }
     .token-item:last-child { border-bottom: none; }
     .token-item:hover { background: var(--surface2); }
-
     .token-icon {
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg,var(--accent),var(--accent2));
       display: flex; align-items: center; justify-content: center;
-      font-size: .8rem;
-      font-weight: 700;
-      font-family: 'Space Mono', monospace;
-      flex-shrink: 0;
-      overflow: hidden;
+      font-size: .8rem; font-weight: 700;
+      font-family: 'Space Mono', monospace; flex-shrink: 0;
     }
-    .token-icon img { width: 100%; height: 100%; object-fit: cover; }
     .token-info { flex: 1; min-width: 0; }
-    .token-name {
-      font-weight: 700;
-      font-size: .9rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .token-address {
-      font-family: 'Space Mono', monospace;
-      font-size: .65rem;
-      color: var(--muted);
-    }
+    .token-name { font-weight: 700; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .token-address { font-family: 'Space Mono', monospace; font-size: .65rem; color: var(--muted); }
     .token-amounts { text-align: right; }
-    .token-balance {
-      font-family: 'Space Mono', monospace;
-      font-size: .85rem;
-      font-weight: 700;
-    }
-    .token-usd {
-      font-size: .72rem;
-      color: var(--muted);
-      font-family: 'Space Mono', monospace;
-    }
+    .token-balance { font-family: 'Space Mono', monospace; font-size: .85rem; font-weight: 700; }
+    .token-usd { font-size: .72rem; color: var(--muted); font-family: 'Space Mono', monospace; }
 
     /* ── TX List ── */
     .tx-list { list-style: none; }
     .tx-item {
-      display: flex;
-      align-items: flex-start;
-      gap: .9rem;
-      padding: .9rem 1.5rem;
-      border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; gap: .9rem;
+      padding: .9rem 1.5rem; border-bottom: 1px solid var(--border);
       transition: background .15s;
     }
     .tx-item:last-child { border-bottom: none; }
     .tx-item:hover { background: var(--surface2); }
-
     .tx-icon {
-      width: 34px; height: 34px;
-      border-radius: 8px;
+      width: 34px; height: 34px; border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1rem;
-      flex-shrink: 0;
+      font-size: 1rem; flex-shrink: 0;
     }
-    .tx-icon.send { background: rgba(239,68,68,.15); }
+    .tx-icon.send    { background: rgba(239,68,68,.15); }
     .tx-icon.receive { background: rgba(16,185,129,.15); }
-    .tx-icon.swap { background: rgba(124,58,237,.15); }
-    .tx-icon.other { background: rgba(246,201,14,.1); }
-
+    .tx-icon.swap    { background: rgba(124,58,237,.15); }
+    .tx-icon.other   { background: rgba(246,201,14,.1); }
     .tx-info { flex: 1; min-width: 0; }
-    .tx-type {
-      font-weight: 700;
-      font-size: .85rem;
-    }
+    .tx-type { font-weight: 700; font-size: .85rem; }
     .tx-sig {
-      font-family: 'Space Mono', monospace;
-      font-size: .62rem;
-      color: var(--muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 220px;
+      font-family: 'Space Mono', monospace; font-size: .62rem;
+      color: var(--muted); white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; max-width: 220px;
     }
-    .tx-time {
-      font-family: 'Space Mono', monospace;
-      font-size: .65rem;
-      color: var(--muted);
-      margin-top: .15rem;
-    }
-    .tx-amount {
-      text-align: right;
-      font-family: 'Space Mono', monospace;
-      font-size: .82rem;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
+    .tx-time { font-family: 'Space Mono', monospace; font-size: .65rem; color: var(--muted); margin-top: .15rem; }
+    .tx-amount { text-align: right; font-family: 'Space Mono', monospace; font-size: .82rem; font-weight: 700; flex-shrink: 0; }
     .tx-amount.positive { color: var(--up); }
     .tx-amount.negative { color: var(--down); }
-    .tx-amount.neutral { color: var(--muted); }
+    .tx-amount.neutral  { color: var(--muted); }
 
-    /* ── Skeleton ── */
+    /* ── Perp Positions ── */
+    .pos-list { list-style: none; }
+    .pos-item {
+      padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
+      transition: background .15s;
+    }
+    .pos-item:last-child { border-bottom: none; }
+    .pos-item:hover { background: var(--surface2); }
+    .pos-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem; }
+    .pos-market { font-weight: 800; font-size: .95rem; display: flex; align-items: center; gap: .5rem; }
+    .pos-side {
+      font-size: .65rem; font-weight: 700;
+      padding: .15rem .5rem; border-radius: 4px;
+      font-family: 'Space Mono', monospace; text-transform: uppercase;
+    }
+    .pos-side.long  { background: rgba(16,185,129,.2); color: var(--up); }
+    .pos-side.short { background: rgba(239,68,68,.2);  color: var(--down); }
+    .pos-pnl { font-family: 'Space Mono', monospace; font-size: .95rem; font-weight: 700; }
+    .pos-pnl.positive { color: var(--up); }
+    .pos-pnl.negative { color: var(--down); }
+    .pos-details { display: grid; grid-template-columns: repeat(3,1fr); gap: .5rem; }
+    .pos-detail-label {
+      font-size: .62rem; font-family: 'Space Mono', monospace;
+      color: var(--muted); text-transform: uppercase; letter-spacing: .06em;
+    }
+    .pos-detail-value { font-size: .78rem; font-family: 'Space Mono', monospace; font-weight: 700; }
+
+    /* ── Limit Orders ── */
+    .order-item {
+      padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
+      transition: background .15s;
+    }
+    .order-item:last-child { border-bottom: none; }
+    .order-item:hover { background: var(--surface2); }
+    .order-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem; }
+    .order-pair { font-weight: 800; font-size: .9rem; }
+    .order-status {
+      font-size: .62rem; font-family: 'Space Mono', monospace;
+      padding: .15rem .5rem; border-radius: 4px;
+      background: rgba(246,201,14,.12); color: var(--accent3);
+      text-transform: uppercase; font-weight: 700;
+    }
+    .order-details { display: grid; grid-template-columns: repeat(3,1fr); gap: .5rem; }
+    .order-detail-label {
+      font-size: .62rem; font-family: 'Space Mono', monospace;
+      color: var(--muted); text-transform: uppercase; letter-spacing: .06em;
+    }
+    .order-detail-value { font-size: .78rem; font-family: 'Space Mono', monospace; font-weight: 700; }
+    .order-progress { margin-top: .6rem; height: 3px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .order-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      border-radius: 3px; transition: width .5s ease;
+    }
+
+    /* ── Empty / Skeleton ── */
+    .empty-state { padding: 2.5rem; text-align: center; color: var(--muted); font-size: .85rem; font-family: 'Space Mono', monospace; }
     .skeleton {
       background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.4s infinite;
-      border-radius: 6px;
+      background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px;
     }
     @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-
     .skeleton-row {
       display: flex; align-items: center; gap: .9rem;
-      padding: .9rem 1.5rem;
-      border-bottom: 1px solid var(--border);
+      padding: .9rem 1.5rem; border-bottom: 1px solid var(--border);
     }
     .sk-circle { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
     .sk-lines { flex: 1; }
     .sk-line { height: 10px; margin-bottom: 6px; border-radius: 4px; }
     .sk-line.short { width: 55%; }
 
-    /* ── Animations ── */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(18px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── Explorer Link ── */
     .explorer-link {
-      font-family: 'Space Mono', monospace;
-      font-size: .7rem;
-      color: var(--accent);
-      text-decoration: none;
-      opacity: .75;
-      transition: opacity .2s;
+      font-family: 'Space Mono', monospace; font-size: .7rem;
+      color: var(--accent); text-decoration: none; opacity: .75; transition: opacity .2s;
     }
     .explorer-link:hover { opacity: 1; }
 
-    /* ── Footer ── */
     footer {
-      text-align: center;
-      padding: 2rem;
-      font-family: 'Space Mono', monospace;
-      font-size: .7rem;
-      color: var(--muted);
-      border-top: 1px solid var(--border);
+      text-align: center; padding: 2rem;
+      font-family: 'Space Mono', monospace; font-size: .7rem;
+      color: var(--muted); border-top: 1px solid var(--border);
     }
   </style>
 </head>
@@ -380,7 +307,6 @@
 
 <main>
 
-  <!-- Wallet Address Display -->
   <section class="wallet-input-section">
     <div class="wallet-input-label">Solana Wallet-Adresse</div>
     <div class="current-address" id="currentAddress"></div>
@@ -391,6 +317,11 @@
   <!-- Stats -->
   <div class="stats-row" id="statsRow">
     <div class="stat-card">
+      <div class="stat-label">Portfolio Gesamt</div>
+      <div class="stat-value" id="portfolioTotal" style="font-size:1.35rem">–</div>
+      <div class="stat-sub" id="portfolioSub">SOL + alle Token</div>
+    </div>
+    <div class="stat-card">
       <div class="stat-label">SOL-Guthaben</div>
       <div class="stat-value" id="solBalance">–</div>
       <div class="stat-sub" id="solUsd">– USD</div>
@@ -398,38 +329,34 @@
     <div class="stat-card">
       <div class="stat-label">Token Assets</div>
       <div class="stat-value" id="tokenCount">–</div>
-      <div class="stat-sub">verschiedene SPL-Token</div>
+      <div class="stat-sub" id="tokenTotalUsd">– USD gesamt</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Letzte Transaktionen</div>
-      <div class="stat-value" id="txCount">–</div>
-      <div class="stat-sub">der letzten 30 Tage</div>
+      <div class="stat-label">Perp Positionen</div>
+      <div class="stat-value" id="perpCount">–</div>
+      <div class="stat-sub" id="perpPnl">Gesamt PnL</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Netzwerk</div>
-      <div class="stat-value" style="font-size:1.2rem; color:var(--accent2)">Solana</div>
-      <div class="stat-sub">Mainnet Beta</div>
+      <div class="stat-label">Limit Orders</div>
+      <div class="stat-value" id="orderCount">–</div>
+      <div class="stat-sub">offene Orders</div>
     </div>
   </div>
 
-  <!-- Dashboard Grid -->
+  <!-- Assets + Transactions -->
   <div class="dashboard-grid">
-
-    <!-- Assets -->
     <div class="panel" id="assetsPanel">
       <div class="panel-header">
         <span class="panel-title">Assets & Token</span>
         <span class="panel-count" id="assetCount">–</span>
       </div>
       <ul class="token-list" id="tokenList">
-        <!-- skeletons -->
         <li class="skeleton-row"><div class="skeleton sk-circle"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>
         <li class="skeleton-row"><div class="skeleton sk-circle"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>
         <li class="skeleton-row"><div class="skeleton sk-circle"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>
       </ul>
     </div>
 
-    <!-- Transactions -->
     <div class="panel" id="txPanel">
       <div class="panel-header">
         <span class="panel-title">Transaktionen</span>
@@ -442,124 +369,190 @@
       </ul>
     </div>
   </div>
+
+  <!-- Jupiter Perpetuals + Limit Orders -->
+  <div class="dashboard-grid-full">
+    <div class="panel" id="perpPanel">
+      <div class="panel-header">
+        <span class="panel-title">Jupiter Perpetuals <span class="jup-badge">JUP</span></span>
+        <span class="panel-count" id="perpPanelCount">–</span>
+      </div>
+      <ul class="pos-list" id="perpList">
+        <li class="skeleton-row"><div class="skeleton sk-circle" style="border-radius:8px"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>
+        <li class="skeleton-row"><div class="skeleton sk-circle" style="border-radius:8px"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>
+      </ul>
+    </div>
+
+    <div class="panel" id="ordersPanel">
+      <div class="panel-header">
+        <span class="panel-title">Limit Orders <span class="jup-badge">JUP</span></span>
+        <span class="panel-count" id="ordersPanelCount">–</span>
+      </div>
+      <ul class="pos-list" id="ordersList">
+        <li class="skeleton-row"><div class="skeleton sk-circle" style="border-radius:8px"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>
+        <li class="skeleton-row"><div class="skeleton sk-circle" style="border-radius:8px"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>
+      </ul>
+    </div>
+  </div>
+
 </main>
 
 <footer>
-  Daten via Helius RPC &amp; Jupiter Price API · Öffentliche Blockchain-Daten · Kein Private Key erforderlich
+  Daten via Helius RPC · Jupiter Perp API · Jupiter Limit Order API · Öffentliche Blockchain-Daten · Kein Private Key erforderlich
 </footer>
 
 <script>
-  // ── Config ──
-  // Für den Produktiveinsatz: Helius API Key registrieren auf helius.dev (kostenloser Plan verfügbar)
-  const HELIUS_RPC = 'https://mainnet.helius-rpc.com/?api-key=32fe89bd-58dd-4958-bb27-8ec36076ba57';
-
-  const LAMPORTS = 1e9;
-
-  // Fest hinterlegte Wallet-Adresse
+  const HELIUS_RPC   = 'https://mainnet.helius-rpc.com/?api-key=32fe89bd-58dd-4958-bb27-8ec36076ba57';
+  const HELIUS_TX    = 'https://api.helius.xyz/v0/transactions/?api-key=32fe89bd-58dd-4958-bb27-8ec36076ba57';
   const FIXED_WALLET = 'HLukyiC7kZDqEVLh7rjYdup4qFu8HYBcFKPgjFRry3Ak';
+  const LAMPORTS     = 1e9;
   let currentAddress = FIXED_WALLET;
 
-  // ── Util ──
-  function shortenAddress(a) {
-    return a ? a.slice(0,4) + '…' + a.slice(-4) : '';
+  // ── Utils ──
+  function shortenAddr(a) { return a ? a.slice(0,4)+'…'+a.slice(-4) : ''; }
+  function timeAgo(ts) {
+    const s = Math.floor(Date.now()/1000) - ts;
+    if (s < 60) return `vor ${s}s`;
+    if (s < 3600) return `vor ${Math.floor(s/60)}min`;
+    if (s < 86400) return `vor ${Math.floor(s/3600)}h`;
+    return `vor ${Math.floor(s/86400)} Tagen`;
   }
-
-  function timeAgo(timestamp) {
-    const secs = Math.floor(Date.now() / 1000) - timestamp;
-    if (secs < 60) return `vor ${secs}s`;
-    if (secs < 3600) return `vor ${Math.floor(secs/60)}min`;
-    if (secs < 86400) return `vor ${Math.floor(secs/3600)}h`;
-    return `vor ${Math.floor(secs/86400)} Tagen`;
+  function fmtUsd(n) {
+    return '$'+Number(n).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
   }
-
+  function fmtNum(n,d=4) {
+    return Number(n).toLocaleString('de-DE',{maximumFractionDigits:d});
+  }
   function showError(msg) {
     const b = document.getElementById('errorBox');
-    b.textContent = '⚠ ' + msg;
+    b.textContent = '⚠ '+msg;
     b.classList.add('show');
-    setTimeout(() => b.classList.remove('show'), 6000);
+    setTimeout(()=>b.classList.remove('show'), 7000);
+  }
+  function skRow() {
+    return `<li class="skeleton-row"><div class="skeleton sk-circle" style="border-radius:8px"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>`;
   }
 
-  // ── RPC Call ──
+  // ── RPC ──
   async function rpc(method, params) {
     const res = await fetch(HELIUS_RPC, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({jsonrpc:'2.0',id:1,method,params})
     });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    return data.result;
+    const d = await res.json();
+    if (d.error) throw new Error(d.error.message);
+    return d.result;
   }
 
-  // ── Load SOL Balance ──
-  async function getSolBalance(address) {
-    const result = await rpc('getBalance', [address, { commitment: 'confirmed' }]);
-    return result.value / LAMPORTS;
+  async function getSolBalance(addr) {
+    const r = await rpc('getBalance',[addr,{commitment:'confirmed'}]);
+    return r.value / LAMPORTS;
   }
 
-  // ── Load Token Accounts ──
-  async function getTokenAccounts(address) {
-    const result = await rpc('getTokenAccountsByOwner', [
-      address,
-      { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' },
-      { encoding: 'jsonParsed' }
+  async function getTokenAccounts(addr) {
+    const r = await rpc('getTokenAccountsByOwner',[
+      addr,
+      {programId:'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'},
+      {encoding:'jsonParsed'}
     ]);
-    return result.value || [];
+    return r.value || [];
   }
 
-  // ── Transactions via Helius ──
-  async function getTransactions(address) {
-    // Erst Signaturen holen
-    const sigs = await rpc('getSignaturesForAddress', [
-      address,
-      { limit: 20, commitment: 'confirmed' }
-    ]);
-
-    if (!sigs || sigs.length === 0) return [];
-
-    // Parsed Transactions via Helius Enhanced API
+  async function getTransactions(addr) {
+    const sigs = await rpc('getSignaturesForAddress',[addr,{limit:20,commitment:'confirmed'}]);
+    if (!sigs||!sigs.length) return [];
     try {
-      const res = await fetch(`https://api.helius.xyz/v0/transactions/?api-key=32fe89bd-58dd-4958-bb27-8ec36076ba57`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions: sigs.slice(0, 15).map(s => s.signature) })
+      const res = await fetch(HELIUS_TX, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({transactions:sigs.slice(0,15).map(s=>s.signature)})
       });
-      if (res.ok) {
-        const parsed = await res.json();
-        return parsed;
-      }
-    } catch(e) { /* Fallback auf Rohdaten */ }
-
-    // Fallback: Rohe Signatur-Liste
-    return sigs.slice(0, 15).map(s => ({
-      signature: s.signature,
-      blockTime: s.blockTime,
-      type: 'UNKNOWN',
-      err: s.err
-    }));
+      if (res.ok) return await res.json();
+    } catch(e) {}
+    return sigs.slice(0,15).map(s=>({signature:s.signature,blockTime:s.blockTime,type:'UNKNOWN',err:s.err}));
   }
 
-  // ── Jupiter Preise ──
+  // ── Jupiter Perpetuals ──
+  async function getPerpPositions(addr) {
+    // Primär: Jupiter Perps Stats API
+    const endpoints = [
+      `https://perp.jup.ag/api/positions?wallet=${addr}`,
+      `https://stats.jup.ag/positions/${addr}`,
+      `https://api.jup.ag/perps/v1/positions?wallet=${addr}`,
+    ];
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url, {headers:{'Accept':'application/json'}});
+        if (res.ok) {
+          const data = await res.json();
+          const positions = data.positions || data.data || (Array.isArray(data) ? data : []);
+          if (positions.length > 0) return positions;
+        }
+      } catch(e) {}
+    }
+
+    // Fallback: On-chain via getProgramAccounts
+    try {
+      const PERP_PROGRAM = 'PERPHjGBqRHArX4DySjwM6UJHiR3sWAatqfdBS2qQJu';
+      const res = await fetch(HELIUS_RPC, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          jsonrpc:'2.0', id:1,
+          method:'getProgramAccounts',
+          params:[PERP_PROGRAM,{
+            encoding:'base64',
+            filters:[
+              {dataSize:216},
+              {memcmp:{offset:8,bytes:addr}}
+            ]
+          }]
+        })
+      });
+      const d = await res.json();
+      if (d.result && d.result.length > 0) return d.result;
+    } catch(e) {}
+
+    return [];
+  }
+
+  // ── Jupiter Limit Orders ──
+  async function getLimitOrders(addr) {
+    const endpoints = [
+      `https://api.jup.ag/limit/v2/openOrders?wallet=${addr}`,
+      `https://jup.ag/api/limit/v1/openOrders?wallet=${addr}`,
+      `https://limit-order-api.jup.ag/v2/openOrders?wallet=${addr}`,
+    ];
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url, {headers:{'Accept':'application/json'}});
+        if (res.ok) {
+          const data = await res.json();
+          const orders = Array.isArray(data) ? data : (data.orders || data.data || []);
+          return orders;
+        }
+      } catch(e) {}
+    }
+    return [];
+  }
+
+  // ── Jupiter Prices ──
   async function getPrices(mints) {
     if (!mints.length) return {};
-    const ids = mints.join(',');
     try {
-      const res = await fetch(`https://price.jup.ag/v6/price?ids=${ids}`);
-      const data = await res.json();
-      return data.data || {};
+      const res = await fetch(`https://price.jup.ag/v6/price?ids=${mints.join(',')}`);
+      const d = await res.json();
+      return d.data || {};
     } catch { return {}; }
   }
 
   // ── Render Tokens ──
   async function renderTokens(tokenAccounts, prices) {
-    const list = document.getElementById('tokenList');
+    const list   = document.getElementById('tokenList');
     const solBal = parseFloat(document.getElementById('solBalance').textContent) || 0;
-    const solPrice = prices['So11111111111111111111111111111111111111112']?.price || 0;
+    const solPx  = prices['So11111111111111111111111111111111111111112']?.price || 0;
+    const solUsd = solBal * solPx;
 
-    let html = '';
-
-    // SOL zuerst
-    html += `
+    let html = `
       <li class="token-item">
         <div class="token-icon" style="background:linear-gradient(135deg,#9945ff,#14f195)">◎</div>
         <div class="token-info">
@@ -568,167 +561,335 @@
         </div>
         <div class="token-amounts">
           <div class="token-balance">${solBal.toFixed(4)} SOL</div>
-          <div class="token-usd">${solPrice ? '$'+(solBal*solPrice).toFixed(2) : '–'} USD</div>
+          <div class="token-usd">${solPx ? fmtUsd(solBal*solPx) : '–'}</div>
         </div>
       </li>`;
 
-    for (const acc of tokenAccounts) {
-      const info = acc.account?.data?.parsed?.info;
-      if (!info) continue;
-      const mint = info.mint;
-      const dec = info.tokenAmount?.decimals || 0;
-      const raw = parseInt(info.tokenAmount?.amount || '0');
-      const amount = raw / Math.pow(10, dec);
-      if (amount < 0.001) continue;
+    let count = 1;
+    let tokenTotalUsd = 0;
 
-      const price = prices[mint]?.price || 0;
-      const usdVal = price ? (amount * price).toFixed(2) : null;
-      const symbol = prices[mint]?.id?.slice(0,6) || shortenAddress(mint);
+    // Sortiere Token nach USD-Wert
+    const validTokens = [];
+    for (const acc of tokenAccounts) {
+      const info   = acc.account?.data?.parsed?.info;
+      if (!info) continue;
+      const mint   = info.mint;
+      const raw    = parseInt(info.tokenAmount?.amount||'0');
+      const dec    = info.tokenAmount?.decimals||0;
+      const amount = raw / Math.pow(10,dec);
+      if (amount < 0.0001) continue;
+      const px = prices[mint]?.price||0;
+      validTokens.push({mint, amount, px, usd: amount*px});
+    }
+    validTokens.sort((a,b) => b.usd - a.usd);
+
+    for (const {mint, amount, px, usd} of validTokens) {
+      const usdVal = px ? fmtUsd(usd) : null;
+      if (px) tokenTotalUsd += usd;
+      const sym    = prices[mint]?.id?.slice(0,8)||shortenAddr(mint);
+      const isJup  = mint==='JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN';
+      const bg     = isJup
+        ? 'background:linear-gradient(135deg,#c084fc,#818cf8)'
+        : 'background:linear-gradient(135deg,var(--accent),var(--accent2))';
+      count++;
 
       html += `
         <li class="token-item">
-          <div class="token-icon">${symbol.slice(0,2).toUpperCase()}</div>
+          <div class="token-icon" style="${bg}">${sym.slice(0,2).toUpperCase()}</div>
           <div class="token-info">
-            <div class="token-name">${symbol.toUpperCase()}</div>
-            <div class="token-address">${shortenAddress(mint)}</div>
+            <div class="token-name">${sym.toUpperCase()}</div>
+            <div class="token-address">${shortenAddr(mint)}</div>
           </div>
           <div class="token-amounts">
-            <div class="token-balance">${amount.toLocaleString('de-DE', {maximumFractionDigits:4})}</div>
-            <div class="token-usd">${usdVal ? '$'+usdVal : '–'} USD</div>
+            <div class="token-balance">${fmtNum(amount)}</div>
+            <div class="token-usd">${usdVal||'kein Preis'}</div>
           </div>
         </li>`;
     }
 
-    if (!tokenAccounts.length && solBal === 0) {
-      html = `<li style="padding:2rem;text-align:center;color:var(--muted);font-size:.85rem">Keine Assets gefunden</li>`;
-    }
-
     list.innerHTML = html;
-    const count = tokenAccounts.filter(a => {
-      const amt = parseInt(a.account?.data?.parsed?.info?.tokenAmount?.amount || '0');
-      return amt > 0;
-    }).length + 1; // +1 for SOL
     document.getElementById('assetCount').textContent = count;
     document.getElementById('tokenCount').textContent = count;
-  }
 
-  // ── Render TXs ──
-  function renderTxs(txs) {
-    const list = document.getElementById('txList');
-    if (!txs.length) {
-      list.innerHTML = `<li style="padding:2rem;text-align:center;color:var(--muted);font-size:.85rem">Keine Transaktionen gefunden</li>`;
-      return;
+    // Token-Gesamt in Stats
+    document.getElementById('tokenTotalUsd').textContent =
+      tokenTotalUsd > 0 ? fmtUsd(tokenTotalUsd)+' gesamt' : '– USD gesamt';
+
+    // Portfolio-Gesamtwert
+    const portfolioTotal = solUsd + tokenTotalUsd;
+    if (portfolioTotal > 0) {
+      document.getElementById('portfolioTotal').textContent = fmtUsd(portfolioTotal);
+      document.getElementById('portfolioSub').textContent =
+        'SOL '+fmtUsd(solUsd)+' · Token '+fmtUsd(tokenTotalUsd);
     }
 
+    return { solUsd, tokenTotalUsd, portfolioTotal };
+  }
+
+  // ── Render Transactions ──
+  function renderTxs(txs) {
+    const list = document.getElementById('txList');
+    if (!txs.length) { list.innerHTML=`<li class="empty-state">Keine Transaktionen gefunden</li>`; return; }
+
     const typeMap = {
-      'SWAP': { icon: '⇄', cls: 'swap', label: 'Swap' },
-      'TRANSFER': { icon: '↑', cls: 'send', label: 'Transfer' },
-      'TOKEN_MINT': { icon: '✦', cls: 'other', label: 'Mint' },
-      'NFT_SALE': { icon: '◈', cls: 'other', label: 'NFT Sale' },
-      'UNKNOWN': { icon: '·', cls: 'other', label: 'Transaktion' },
+      SWAP:      {icon:'⇄',cls:'swap',  label:'Swap'},
+      TRANSFER:  {icon:'↑',cls:'send',  label:'Transfer'},
+      TOKEN_MINT:{icon:'✦',cls:'other', label:'Mint'},
+      NFT_SALE:  {icon:'◈',cls:'other', label:'NFT Sale'},
+      UNKNOWN:   {icon:'·',cls:'other', label:'Transaktion'},
     };
 
-    let html = '';
-    for (const tx of txs.slice(0, 12)) {
-      const type = tx.type || 'UNKNOWN';
-      const t = typeMap[type] || typeMap['UNKNOWN'];
-      const sig = tx.signature || '';
+    let html='';
+    for (const tx of txs.slice(0,12)) {
+      const t    = typeMap[tx.type||'UNKNOWN']||typeMap.UNKNOWN;
+      const sig  = tx.signature||'';
       const time = tx.blockTime ? timeAgo(tx.blockTime) : '–';
-      const err = tx.err || tx.transactionError;
-      const fee = tx.fee ? (tx.fee / LAMPORTS).toFixed(5) : null;
+      const err  = tx.err||tx.transactionError;
+      const fee  = tx.fee ? (tx.fee/LAMPORTS).toFixed(5) : null;
 
-      // Versuche Betrag aus nativeTransfers zu lesen
-      let amountHtml = '';
-      if (tx.nativeTransfers && tx.nativeTransfers.length > 0) {
-        const nt = tx.nativeTransfers[0];
-        const dir = nt.toUserAccount === currentAddress ? 'positive' : 'negative';
-        const sign = dir === 'positive' ? '+' : '-';
-        const val = (Math.abs(nt.amount) / LAMPORTS).toFixed(4);
-        amountHtml = `<div class="tx-amount ${dir}">${sign}${val} SOL</div>`;
-      } else if (type === 'SWAP') {
-        amountHtml = `<div class="tx-amount neutral">Swap</div>`;
+      let amt='';
+      if (tx.nativeTransfers?.length>0) {
+        const nt  = tx.nativeTransfers[0];
+        const dir = nt.toUserAccount===currentAddress?'positive':'negative';
+        const solAmt = Math.abs(nt.amount)/LAMPORTS;
+        const solPx  = window._solPrice||0;
+        const usdHint= solPx ? `<span style="font-size:.65rem;color:var(--muted);font-weight:400"> ≈${fmtUsd(solAmt*solPx)}</span>` : '';
+        amt=`<div class="tx-amount ${dir}" style="line-height:1.3">${dir==='positive'?'+':'-'}${solAmt.toFixed(4)} SOL${usdHint}</div>`;
+      } else if (tx.type==='SWAP') {
+        amt=`<div class="tx-amount neutral">Swap</div>`;
       } else if (fee) {
-        amountHtml = `<div class="tx-amount neutral">Fee: ${fee} SOL</div>`;
+        amt=`<div class="tx-amount neutral">Fee: ${fee} SOL</div>`;
       }
 
-      html += `
+      html+=`
         <li class="tx-item">
           <div class="tx-icon ${t.cls}">${t.icon}</div>
           <div class="tx-info">
-            <div class="tx-type">${t.label}${err ? ' ❌' : ''}</div>
+            <div class="tx-type">${t.label}${err?' ❌':''}</div>
             <div class="tx-sig">${sig}</div>
             <div class="tx-time">${time} · <a class="explorer-link" href="https://solscan.io/tx/${sig}" target="_blank">↗ Explorer</a></div>
           </div>
-          ${amountHtml}
+          ${amt}
+        </li>`;
+    }
+    list.innerHTML=html;
+    document.getElementById('txPanelCount').textContent=txs.length;
+  }
+
+  // ── Render Perp Positions ──
+  function renderPerpPositions(positions) {
+    const list = document.getElementById('perpList');
+
+    if (!positions||positions.length===0) {
+      list.innerHTML=`<li class="empty-state">Keine offenen Perp-Positionen</li>`;
+      document.getElementById('perpCount').textContent='0';
+      document.getElementById('perpPanelCount').textContent='0';
+      document.getElementById('perpPnl').textContent='Keine offenen Positionen';
+      return;
+    }
+
+    let html=''; let totalPnl=0;
+    for (const pos of positions) {
+      const market    = pos.market||pos.symbol||pos.pool||pos.marketSymbol||'–';
+      const side      = (pos.side||pos.direction||'long').toLowerCase();
+      const size      = pos.size||pos.sizeUsd||pos.collateralUsd||0;
+      const entryPx   = pos.entryPrice||pos.averagePrice||pos.entryPriceUsd||0;
+      const liqPx     = pos.liquidationPrice||pos.liqPrice||0;
+      const pnl       = pos.pnl||pos.unrealizedPnl||pos.pnlUsd||0;
+      const leverage  = pos.leverage||'–';
+      const collateral= pos.collateral||pos.collateralUsd||0;
+      totalPnl += parseFloat(pnl)||0;
+
+      const pnlSign  = pnl>=0?'+':'';
+      const pnlCls   = pnl>=0?'positive':'negative';
+
+      html+=`
+        <li class="pos-item">
+          <div class="pos-header">
+            <div class="pos-market">
+              ${String(market).toUpperCase().replace(/-?PERP/i,'').replace(/_PERP/i,'')}
+              <span class="pos-side ${side}">${side==='long'?'↑ LONG':'↓ SHORT'}</span>
+            </div>
+            <div class="pos-pnl ${pnlCls}">${pnlSign}${fmtUsd(pnl)}</div>
+          </div>
+          <div class="pos-details">
+            <div>
+              <div class="pos-detail-label">Größe</div>
+              <div class="pos-detail-value">${size?fmtUsd(size):'–'}</div>
+            </div>
+            <div>
+              <div class="pos-detail-label">Einstieg</div>
+              <div class="pos-detail-value">${entryPx?fmtUsd(entryPx):'–'}</div>
+            </div>
+            <div>
+              <div class="pos-detail-label">Liq. Preis</div>
+              <div class="pos-detail-value" style="color:var(--down)">${liqPx?fmtUsd(liqPx):'–'}</div>
+            </div>
+            <div>
+              <div class="pos-detail-label">Hebel</div>
+              <div class="pos-detail-value">${leverage}x</div>
+            </div>
+            <div>
+              <div class="pos-detail-label">Sicherheit</div>
+              <div class="pos-detail-value">${collateral?fmtUsd(collateral):'–'}</div>
+            </div>
+          </div>
         </li>`;
     }
 
-    list.innerHTML = html;
-    document.getElementById('txPanelCount').textContent = txs.length;
-    document.getElementById('txCount').textContent = txs.length;
+    list.innerHTML=html;
+    document.getElementById('perpCount').textContent=positions.length;
+    document.getElementById('perpPanelCount').textContent=positions.length;
+    const pnlStyle=totalPnl>=0?'color:var(--up)':'color:var(--down)';
+    document.getElementById('perpPnl').innerHTML=
+      `<span style="${pnlStyle}">PnL: ${totalPnl>=0?'+':''}${fmtUsd(totalPnl)}</span>`;
   }
 
-  // ── Main Load ──
+  // ── Render Limit Orders ──
+  async function renderLimitOrders(orders) {
+    const list = document.getElementById('ordersList');
+
+    if (!orders||orders.length===0) {
+      list.innerHTML=`<li class="empty-state">Keine offenen Limit Orders</li>`;
+      document.getElementById('orderCount').textContent='0';
+      document.getElementById('ordersPanelCount').textContent='0';
+      return;
+    }
+
+    const mints=[...new Set(orders.flatMap(o=>[o.inputMint,o.outputMint,o.inMint,o.outMint].filter(Boolean)))];
+    const prices = mints.length ? await getPrices(mints) : {};
+
+    let html='';
+    for (const order of orders) {
+      const inMint  = order.inputMint  ||order.inMint  ||'';
+      const outMint = order.outputMint ||order.outMint ||'';
+      const inSym   = prices[inMint]?.id  ||shortenAddr(inMint);
+      const outSym  = prices[outMint]?.id ||shortenAddr(outMint);
+
+      const inDec   = order.inputDecimals  ||6;
+      const outDec  = order.outputDecimals ||6;
+      const inAmt   = parseFloat(order.inAmount  ||order.makingAmount  ||order.inputAmount  ||0);
+      const outAmt  = parseFloat(order.outAmount ||order.takingAmount  ||order.outputAmount ||0);
+      const filled  = parseFloat(order.filledInAmount||order.filledMakingAmount||0);
+
+      const inHuman  = (inAmt  / Math.pow(10,inDec )).toFixed(4);
+      const outHuman = (outAmt / Math.pow(10,outDec)).toFixed(4);
+      const fillPct  = inAmt>0 ? Math.round((filled/inAmt)*100) : 0;
+
+      const limitPx  = outHuman>0&&inHuman>0
+        ? (parseFloat(outHuman)/parseFloat(inHuman)).toFixed(6)
+        : '–';
+      const curPx    = prices[inMint]?.price?.toFixed(6)||'–';
+
+      const expAt = order.expiredAt||order.expiresAt;
+      const expiry= expAt ? new Date(expAt*1000).toLocaleDateString('de-DE') : '–';
+
+      html+=`
+        <li class="order-item">
+          <div class="order-header">
+            <div class="order-pair">${inSym.toUpperCase()} → ${outSym.toUpperCase()}</div>
+            <span class="order-status">Offen · ${fillPct}% gefüllt</span>
+          </div>
+          <div class="order-details">
+            <div>
+              <div class="order-detail-label">Verkaufen</div>
+              <div class="order-detail-value">${inHuman} ${inSym.toUpperCase()}</div>
+            </div>
+            <div>
+              <div class="order-detail-label">Kaufen</div>
+              <div class="order-detail-value">${outHuman} ${outSym.toUpperCase()}</div>
+            </div>
+            <div>
+              <div class="order-detail-label">Limit Preis</div>
+              <div class="order-detail-value">${limitPx}</div>
+            </div>
+            <div>
+              <div class="order-detail-label">Akt. Preis</div>
+              <div class="order-detail-value">${curPx}</div>
+            </div>
+            <div>
+              <div class="order-detail-label">Gefüllt</div>
+              <div class="order-detail-value">${fillPct}%</div>
+            </div>
+            <div>
+              <div class="order-detail-label">Ablauf</div>
+              <div class="order-detail-value">${expiry}</div>
+            </div>
+          </div>
+          <div class="order-progress">
+            <div class="order-progress-bar" style="width:${fillPct}%"></div>
+          </div>
+        </li>`;
+    }
+
+    list.innerHTML=html;
+    document.getElementById('orderCount').textContent=orders.length;
+    document.getElementById('ordersPanelCount').textContent=orders.length;
+  }
+
+  // ── Main ──
   async function loadWallet() {
-    const input = FIXED_WALLET;
-    currentAddress = input;
+    const addr = FIXED_WALLET;
+    currentAddress = addr;
 
     document.getElementById('currentAddress').innerHTML =
-      `Wallet: <strong>${input}</strong> · <a class="explorer-link" href="https://solscan.io/account/${input}" target="_blank">↗ Solscan</a>`;
+      `Wallet: <strong>${addr}</strong> · <a class="explorer-link" href="https://solscan.io/account/${addr}" target="_blank">↗ Solscan</a>`;
 
-    // Reset UI
-    document.getElementById('solBalance').textContent = '…';
-    document.getElementById('solUsd').textContent = '…';
-    document.getElementById('tokenCount').textContent = '…';
-    document.getElementById('txCount').textContent = '…';
+    ['solBalance','tokenCount','perpCount','orderCount','portfolioTotal'].forEach(id=>{
+      document.getElementById(id).textContent='…';
+    });
+    document.getElementById('solUsd').textContent='…';
+    document.getElementById('perpPnl').textContent='…';
 
-    const skRow = () => `<li class="skeleton-row"><div class="skeleton sk-circle"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>`;
-    document.getElementById('tokenList').innerHTML = skRow()+skRow()+skRow();
-    document.getElementById('txList').innerHTML = skRow()+skRow()+skRow();
+    const sk=skRow();
+    document.getElementById('tokenList').innerHTML  = sk+sk+sk;
+    document.getElementById('txList').innerHTML     = sk+sk+sk;
+    document.getElementById('perpList').innerHTML   = sk+sk;
+    document.getElementById('ordersList').innerHTML = sk+sk;
 
-    // Panels sichtbar machen
-    document.getElementById('statsRow').classList.add('loaded');
-    document.getElementById('assetsPanel').classList.add('loaded');
-    document.getElementById('txPanel').classList.add('loaded');
+    ['statsRow','assetsPanel','txPanel','perpPanel','ordersPanel'].forEach(id=>{
+      document.getElementById(id).classList.add('loaded');
+    });
 
     try {
-      // Parallel laden
-      const [solBalance, tokenAccounts, txs] = await Promise.all([
-        getSolBalance(input),
-        getTokenAccounts(input),
-        getTransactions(input)
+      const [solBalance, tokenAccounts, txs, perpPositions, limitOrders] = await Promise.all([
+        getSolBalance(addr),
+        getTokenAccounts(addr),
+        getTransactions(addr),
+        getPerpPositions(addr),
+        getLimitOrders(addr)
       ]);
 
-      document.getElementById('solBalance').textContent = solBalance.toFixed(4) + ' SOL';
+      document.getElementById('solBalance').textContent = solBalance.toFixed(4)+' SOL';
 
-      // Mints für Preis-Abfrage sammeln
       const mints = [
-        'So11111111111111111111111111111111111111112', // SOL
-        ...tokenAccounts.map(a => a.account?.data?.parsed?.info?.mint).filter(Boolean)
+        'So11111111111111111111111111111111111111112',
+        ...tokenAccounts.map(a=>a.account?.data?.parsed?.info?.mint).filter(Boolean)
       ];
+      const prices = await getPrices(mints.slice(0,50));
 
-      const prices = await getPrices(mints.slice(0, 50));
+      const solPx = prices['So11111111111111111111111111111111111111112']?.price;
+      window._solPrice = solPx || 0;
+      document.getElementById('solUsd').textContent = solPx
+        ? `≈ ${fmtUsd(solBalance*solPx)}` : '– USD';
 
-      const solPrice = prices['So11111111111111111111111111111111111111112']?.price;
-      document.getElementById('solUsd').textContent = solPrice
-        ? '≈ $' + (solBalance * solPrice).toFixed(2) + ' USD'
-        : '– USD';
+      document.getElementById('txPanelCount').textContent = txs.length;
 
-      renderTokens(tokenAccounts, prices);
+      await renderTokens(tokenAccounts, prices);
       renderTxs(txs);
+      renderPerpPositions(perpPositions);
+      await renderLimitOrders(limitOrders);
 
     } catch(e) {
       console.error(e);
-      showError('Fehler beim Laden der Wallet-Daten: ' + e.message);
-      document.getElementById('tokenList').innerHTML = `<li style="padding:2rem;text-align:center;color:var(--muted);font-size:.85rem">Fehler beim Laden</li>`;
-      document.getElementById('txList').innerHTML = `<li style="padding:2rem;text-align:center;color:var(--muted);font-size:.85rem">Fehler beim Laden</li>`;
+      showError('Fehler beim Laden: '+e.message);
+      ['tokenList','txList','perpList','ordersList'].forEach(id=>{
+        document.getElementById(id).innerHTML=`<li class="empty-state">Fehler beim Laden</li>`;
+      });
     }
   }
 
-  // Auto-load on start
   loadWallet();
-
-  // Auto-refresh alle 60 Sekunden
   setInterval(loadWallet, 60000);
 </script>
 </body>

@@ -689,23 +689,145 @@
     } catch(e){}
     return sigs.slice(0,15).map(s=>({signature:s.signature,blockTime:s.blockTime,type:'UNKNOWN',err:s.err}));
   }
+  // Jupiter Perps Program ID und Custody-Adressen
+  const PERP_PROGRAM  = 'PERPHjGBqRHArX4DySjwM6UJHiR3sWAatqfdBS2qQJu';
+  // Custody Accounts fuer die 3 Maerkte (Long-Seite)
+  const CUSTODY_MAP = {
+    '7xS2gz2bTp3fwCC7knJvUWTEU9Tycczu6VhJYKgi1wdz': { symbol: 'SOL',  decimals: 9 },
+    'AQCGyheWPLeo6Qp9WpYS9m3Qj479t7R636N9iBfmwBeB': { symbol: 'ETH',  decimals: 8 },
+    '5Pv3gM9JrFFH883SWAhvJC9RPYmo8UNxuFtv5bMMALkm': { symbol: 'BTC',  decimals: 8 },
+    // USDC/USDT fuer Shorts
+    'G18ajDDK7YjfGCRdQpbbAMMgmZ8QXSvHXMzPxGSWJBnM': { symbol: 'USDC', decimals: 6 },
+    'BmFqVdvKVCDvV9tRQFf5VXDX8vVpCExqMbPxMxQxWRV':  { symbol: 'USDT', decimals: 6 },
+  };
+
   async function getPerpPositions(addr) {
-    const urls = [
-      `https://perp.jup.ag/api/positions?wallet=${addr}`,
-      `https://stats.jup.ag/positions/${addr}`,
-      `https://api.jup.ag/perps/v1/positions?wallet=${addr}`,
-    ];
-    for (const url of urls) {
-      try {
-        const res = await fetch(url,{headers:{'Accept':'application/json'}});
-        if (res.ok) {
-          const d = await res.json();
-          const p = d.positions||d.data||(Array.isArray(d)?d:[]);
-          if (p.length>0) return p;
-        }
-      } catch(e){}
+    try {
+      // getProgramAccounts mit memcmp auf owner-Feld (offset 8 = nach Anchor-Discriminator)
+      const body = {
+        jsonrpc: '2.0', id: 1,
+        method: 'getProgramAccounts',
+        params: [
+          PERP_PROGRAM,
+          {
+            encoding: 'base64',
+            commitment: 'confirmed',
+            filters: [
+              { dataSize: 216 },
+              { memcmp: { offset: 8, bytes: addr } }
+            ]
+          }
+        ]
+      };
+      const res = await fetch(HELIUS_RPC, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const json = await res.json();
+      if (!json.result || json.result.length === 0) return [];
+
+      const positions = [];
+      for (const acct of json.result) {
+        try {
+          const raw = Uint8Array.from(atob(acct.account.data[0]), c => c.charCodeAt(0));
+          const pos = decodePositionAccount(raw, acct.pubkey);
+          if (pos && pos.sizeUsd > 0) positions.push(pos);
+        } catch(e) { console.warn('Position decode error:', e); }
+      }
+      return positions;
+    } catch(e) {
+      console.error('getPerpPositions error:', e);
+      return [];
     }
-    return [];
+  }
+
+  function decodePositionAccount(data, pubkey) {
+    // Anchor-Discriminator: 8 Bytes, dann Felder gemaess IDL
+    // Layout (alle Little-Endian):
+    // [0..8]   discriminator
+    // [8..40]  owner (32 bytes pubkey)
+    // [40..72] pool  (32 bytes pubkey)
+    // [72..104] custody (32 bytes pubkey)
+    // [104..136] collateralCustody (32 bytes pubkey)
+    // [136..144] openTime (i64)
+    // [144..152] updateTime (i64)
+    // [152..153] side (u8: 1=long, 2=short)
+    // [153..161] price (u64, 6 decimals = USD)
+    // [161..169] sizeUsd (u64, 6 decimals)
+    // [169..177] collateralUsd (u64, 6 decimals)
+    // [177..185] realisedPnlUsd (i64, 6 decimals)
+
+    if (data.length < 185) return null;
+
+    const view = new DataView(data.buffer, data.byteOffset);
+
+    const custodyBytes = data.slice(72, 104);
+    const custodyKey = bs58Encode(custodyBytes);
+
+    const sideVal = data[152];
+    const side = sideVal === 1 ? 'long' : 'short';
+
+    const USD_DEC = 1_000_000; // 6 decimals
+
+    const price          = Number(view.getBigUint64(153, true)) / USD_DEC;
+    const sizeUsd        = Number(view.getBigUint64(161, true)) / USD_DEC;
+    const collateralUsd  = Number(view.getBigUint64(169, true)) / USD_DEC;
+    const realisedPnl    = Number(view.getBigInt64(177, true))  / USD_DEC;
+
+    if (sizeUsd === 0) return null;
+
+    const custody = CUSTODY_MAP[custodyKey] || { symbol: custodyKey.slice(0,6), decimals: 6 };
+
+    // Marktname aus Custody ableiten
+    const market = side === 'long' ? custody.symbol : custody.symbol;
+
+    return {
+      pubkey,
+      market,
+      side,
+      price,
+      sizeUsd,
+      collateralUsd,
+      realisedPnlUsd: realisedPnl,
+      pnl: realisedPnl, // Unrealized PnL benoetigt aktuellen Preis (wird in renderPerpPositions ergaenzt)
+    };
+  }
+
+  // Base58 Encoder fuer Pubkeys
+  function bs58Encode(bytes) {
+    const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    let d = [...bytes], s = '', i, j, c, n;
+    for (i = 0; i < bytes.length; i++) {
+      j = 0; c = bytes[i];
+      s = s; n = 0;
+      for (j = 0; j < d.length; j++) {
+        c += d[j] << 8; d[j] = c % 58; c = (c / 58) | 0;
+      }
+      while (c) { d.push(c % 58); c = (c / 58) | 0; }
+    }
+    // Ignore me, use a simple approach:
+    // We need to just do proper base58
+    return bs58Simple(bytes);
+  }
+
+  function bs58Simple(uint8Array) {
+    const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    let digits = [0];
+    for (let i = 0; i < uint8Array.length; i++) {
+      let carry = uint8Array[i];
+      for (let j = 0; j < digits.length; j++) {
+        carry += digits[j] << 8;
+        digits[j] = carry % 58;
+        carry = (carry / 58) | 0;
+      }
+      while (carry > 0) { digits.push(carry % 58); carry = (carry / 58) | 0; }
+    }
+    // Leading zeroes
+    let str = '';
+    for (let i = uint8Array.length - 1; i >= 0 && uint8Array[i] === 0; i--) str += '1';
+    for (let i = digits.length - 1; i >= 0; i--) str += ALPHABET[digits[i]];
+    return str;
   }
   async function getLimitOrders(addr) {
     const urls = [
@@ -725,10 +847,41 @@
   }
   async function getPrices(mints) {
     if (!mints.length) return {};
+
+    // Versuch 1: Jupiter Price API v4
     try {
-      const res = await fetch(`https://price.jup.ag/v6/price?ids=${mints.join(',')}`);
-      return (await res.json()).data||{};
-    } catch { return {}; }
+      const res = await fetch('https://price.jup.ag/v4/price?ids='+mints.join(','));
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data && Object.keys(json.data).length > 0) return json.data;
+      }
+    } catch(e) {}
+
+    // Versuch 2: Jupiter Price API v6
+    try {
+      const res = await fetch('https://price.jup.ag/v6/price?ids='+mints.join(','));
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data) return json.data;
+      }
+    } catch(e) {}
+
+    // Versuch 3: Helius DAS API fuer Token-Metadaten mit Preis
+    try {
+      const solMint = 'So11111111111111111111111111111111111111112';
+      // CoinGecko simple price fuer SOL als letzter Fallback
+      const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.solana?.usd) {
+          const result = {};
+          result[solMint] = { price: json.solana.usd, id: 'SOL' };
+          return result;
+        }
+      }
+    } catch(e) {}
+
+    return {};
   }
 
   // ─── Render: Tokens ───
@@ -881,7 +1034,14 @@
   }
 
   // ─── Render: Perp ───
-  function renderPerpPositions(positions, cacheData) {
+  // Marktpreise fuer PnL-Berechnung
+  const MARKET_PRICE_MINTS = {
+    'SOL': 'So11111111111111111111111111111111111111112',
+    'ETH': '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs',
+    'BTC': '3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh',
+  };
+
+  function renderPerpPositions(positions, cacheData, prices) {
     const list = document.getElementById('perpList');
     if (!positions||!positions.length) {
       const h=`<li class="empty-state">Keine offenen Perp-Positionen</li>`;
@@ -894,31 +1054,55 @@
     }
     let html=''; let totalPnl=0;
     for (const pos of positions) {
-      const market = pos.market||pos.symbol||pos.pool||'–';
-      const side   = (pos.side||pos.direction||'long').toLowerCase();
-      const size   = pos.size||pos.sizeUsd||0;
-      const entry  = pos.entryPrice||pos.averagePrice||0;
-      const liq    = pos.liquidationPrice||pos.liqPrice||0;
-      const pnl    = pos.pnl||pos.unrealizedPnl||0;
-      const lev    = pos.leverage||'–';
-      const col    = pos.collateral||pos.collateralUsd||0;
-      totalPnl    += parseFloat(pnl)||0;
-      const pnlCls = pnl>=0?'positive':'negative';
+      const market = pos.market || '–';
+      const side   = (pos.side || 'long').toLowerCase();
+      const sizeUsd       = pos.sizeUsd || 0;
+      const collateralUsd = pos.collateralUsd || 0;
+      const entryPrice    = pos.price || 0;
+
+      // Unrealisierte PnL berechnen aus aktuellem Preis
+      const marketMint  = MARKET_PRICE_MINTS[market];
+      const currentPrice = marketMint && prices ? (prices[marketMint]?.price || 0) : 0;
+
+      let unrealizedPnl = 0;
+      if (currentPrice > 0 && entryPrice > 0 && sizeUsd > 0) {
+        const priceDelta = (currentPrice - entryPrice) / entryPrice;
+        unrealizedPnl = side === 'long'
+          ? sizeUsd * priceDelta
+          : sizeUsd * (-priceDelta);
+      }
+
+      // Hebel = Positionsgrösse / Sicherheit
+      const leverage = collateralUsd > 0 ? (sizeUsd / collateralUsd).toFixed(1) : '–';
+
+      // Grob-Liquidationspreis: Einstieg ± (collateral/size * entryPrice)
+      let liqPrice = 0;
+      if (entryPrice > 0 && collateralUsd > 0 && sizeUsd > 0) {
+        const liqDelta = (collateralUsd * 0.9) / sizeUsd; // 90% Kollateral aufgebraucht
+        liqPrice = side === 'long'
+          ? entryPrice * (1 - liqDelta)
+          : entryPrice * (1 + liqDelta);
+      }
+
+      totalPnl += unrealizedPnl;
+      const pnlCls = unrealizedPnl >= 0 ? 'positive' : 'negative';
+
       html += `
         <li class="pos-item">
           <div class="pos-header">
             <div class="pos-market">
-              ${String(market).toUpperCase().replace(/-?PERP/i,'').replace(/_PERP/i,'')}
+              ${market}
               <span class="pos-side ${side}">${side==='long'?'↑ LONG':'↓ SHORT'}</span>
             </div>
-            <div class="pos-pnl ${pnlCls}">${pnl>=0?'+':''}${fmtUsd(pnl)}</div>
+            <div class="pos-pnl ${pnlCls}">${unrealizedPnl>=0?'+':''}${fmtUsd(unrealizedPnl)}</div>
           </div>
           <div class="pos-details">
-            <div><div class="pos-detail-label">Größe</div><div class="pos-detail-value">${size?fmtUsd(size):'–'}</div></div>
-            <div><div class="pos-detail-label">Einstieg</div><div class="pos-detail-value">${entry?fmtUsd(entry):'–'}</div></div>
-            <div><div class="pos-detail-label">Liq.</div><div class="pos-detail-value" style="color:var(--down)">${liq?fmtUsd(liq):'–'}</div></div>
-            <div><div class="pos-detail-label">Hebel</div><div class="pos-detail-value">${lev}x</div></div>
-            <div><div class="pos-detail-label">Sicherheit</div><div class="pos-detail-value">${col?fmtUsd(col):'–'}</div></div>
+            <div><div class="pos-detail-label">Größe</div><div class="pos-detail-value">${fmtUsd(sizeUsd)}</div></div>
+            <div><div class="pos-detail-label">Einstieg</div><div class="pos-detail-value">${entryPrice?fmtUsd(entryPrice):'–'}</div></div>
+            <div><div class="pos-detail-label">Akt. Preis</div><div class="pos-detail-value">${currentPrice?fmtUsd(currentPrice):'–'}</div></div>
+            <div><div class="pos-detail-label">Liq. (ca.)</div><div class="pos-detail-value" style="color:var(--down)">${liqPrice?fmtUsd(liqPrice):'–'}</div></div>
+            <div><div class="pos-detail-label">Hebel</div><div class="pos-detail-value">${leverage}x</div></div>
+            <div><div class="pos-detail-label">Sicherheit</div><div class="pos-detail-value">${fmtUsd(collateralUsd)}</div></div>
           </div>
         </li>`;
     }
@@ -1024,14 +1208,20 @@
 
       const mints = [
         'So11111111111111111111111111111111111111112',
+        // Marktpreise fuer Perp-PnL
+        '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs', // ETH
+        '3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh', // BTC
         ...tokenAccounts.map(a=>a.account?.data?.parsed?.info?.mint).filter(Boolean)
       ];
       const prices = await getPrices(mints.slice(0,50));
       const solPx  = prices['So11111111111111111111111111111111111111112']?.price||0;
       window._solPrice = solPx;
 
+      const solUsdVal = solPx ? solBalance * solPx : 0;
       document.getElementById('solUsd').textContent = solPx
-        ? `≈ ${fmtUsd(solBalance*solPx)}` : '– USD';
+        ? `≈ ${fmtUsd(solUsdVal)}` : '– USD';
+      cacheData.solUsd   = solUsdVal;
+      cacheData.solPrice = solPx;
 
       renderTokens(tokenAccounts, prices, solBalance, cacheData);
 
@@ -1043,7 +1233,7 @@
       ]);
 
       renderTxs(txs, cacheData);
-      renderPerpPositions(perpPositions, cacheData);
+      renderPerpPositions(perpPositions, cacheData, prices);
       await renderLimitOrders(limitOrders, cacheData);
 
       saveCache(cacheData);

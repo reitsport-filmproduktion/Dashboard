@@ -452,7 +452,6 @@
   // ── Config ──
   // Für den Produktiveinsatz: Helius API Key registrieren auf helius.dev (kostenloser Plan verfügbar)
   const HELIUS_RPC = 'https://mainnet.helius-rpc.com/?api-key=32fe89bd-58dd-4958-bb27-8ec36076ba57';
-  const SOLANA_RPC = 'https://api.mainnet-beta.solana.com'; // Fallback (rate-limited)
 
   const LAMPORTS = 1e9;
 
@@ -481,9 +480,8 @@
   }
 
   // ── RPC Call ──
-  async function rpc(method, params, useHelius = true) {
-    const url = useHelius ? HELIUS_RPC : SOLANA_RPC;
-    const res = await fetch(url, {
+  async function rpc(method, params) {
+    const res = await fetch(HELIUS_RPC, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
@@ -495,7 +493,7 @@
 
   // ── Load SOL Balance ──
   async function getSolBalance(address) {
-    const result = await rpc('getBalance', [address, { commitment: 'confirmed' }], false);
+    const result = await rpc('getBalance', [address, { commitment: 'confirmed' }]);
     return result.value / LAMPORTS;
   }
 
@@ -505,7 +503,7 @@
       address,
       { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' },
       { encoding: 'jsonParsed' }
-    ], false);
+    ]);
     return result.value || [];
   }
 
@@ -515,7 +513,7 @@
     const sigs = await rpc('getSignaturesForAddress', [
       address,
       { limit: 20, commitment: 'confirmed' }
-    ], false);
+    ]);
 
     if (!sigs || sigs.length === 0) return [];
 
@@ -721,7 +719,7 @@
 
     } catch(e) {
       console.error(e);
-      showError('Fehler beim Laden der Wallet-Daten: ' + e.message + ' — Bitte Helius API Key in HELIUS_RPC eintragen.');
+      showError('Fehler beim Laden der Wallet-Daten: ' + e.message);
       document.getElementById('tokenList').innerHTML = `<li style="padding:2rem;text-align:center;color:var(--muted);font-size:.85rem">Fehler beim Laden</li>`;
       document.getElementById('txList').innerHTML = `<li style="padding:2rem;text-align:center;color:var(--muted);font-size:.85rem">Fehler beim Laden</li>`;
     }

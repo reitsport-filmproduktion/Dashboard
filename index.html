@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wallet Dashboard · Jupiter / Krypton</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0c12;
+      --surface: #111420;
+      --surface2: #181d2e;
+      --border: #252a40;
+      --accent: #7c3aed;
+      --accent2: #06d6a0;
+      --accent3: #f6c90e;
+      --text: #e8eaf0;
+      --muted: #5a6080;
+      --danger: #ef4444;
+      --up: #10b981;
+      --down: #ef4444;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 40% at 80% 10%, rgba(124,58,237,.18) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 30% at 10% 80%, rgba(6,214,160,.10) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.5rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: rgba(10,12,18,.88);
+      backdrop-filter: blur(16px);
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: -.02em;
+      color: var(--text);
+    }
+    .logo span { color: var(--accent2); }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-family: 'Space Mono', monospace;
+      font-size: .72rem;
+      color: var(--accent2);
+      background: rgba(6,214,160,.08);
+      border: 1px solid rgba(6,214,160,.25);
+      border-radius: 100px;
+      padding: .3rem .8rem;
+    }
+    .live-dot {
+      width: 7px; height: 7px;
+      background: var(--accent2);
+      border-radius: 50%;
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .4; transform: scale(.7); }
+    }
+
+    /* ── Main Layout ── */
+    main { max-width: 1180px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+    /* ── Wallet Input ── */
+    .wallet-input-section {
+      margin-bottom: 2.5rem;
+      animation: fadeUp .5s ease both;
+    }
+    .wallet-input-label {
+      font-size: .75rem;
+      font-family: 'Space Mono', monospace;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      margin-bottom: .6rem;
+    }
+
+    .current-address {
+      font-family: 'Space Mono', monospace;
+      font-size: .8rem;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .85rem 1.2rem;
+      word-break: break-all;
+    }
+    .current-address strong { color: var(--accent2); }
+
+    /* ── Error ── */
+    .error-box {
+      background: rgba(239,68,68,.08);
+      border: 1px solid rgba(239,68,68,.3);
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      color: #fca5a5;
+      font-size: .85rem;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+    .error-box.show { display: block; }
+
+    /* ── Stats Row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+      animation: fadeUp .5s .1s ease both;
+      opacity: 0;
+    }
+    .stats-row.loaded { opacity: 1; }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.3rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px 2px 0 0;
+    }
+    .stat-label {
+      font-size: .72rem;
+      font-family: 'Space Mono', monospace;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-bottom: .5rem;
+    }
+    .stat-value {
+      font-size: 1.7rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .stat-sub {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: .3rem;
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* ── Grid ── */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 800px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+    /* ── Panel ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      animation: fadeUp .5s .2s ease both;
+      opacity: 0;
+    }
+    .panel.loaded { opacity: 1; }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title {
+      font-size: .85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+    }
+    .panel-count {
+      font-family: 'Space Mono', monospace;
+      font-size: .72rem;
+      background: var(--surface2);
+      border-radius: 100px;
+      padding: .2rem .6rem;
+      color: var(--accent2);
+    }
+
+    /* ── Token List ── */
+    .token-list { list-style: none; }
+    .token-item {
+      display: flex;
+      align-items: center;
+      gap: .9rem;
+      padding: .9rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      transition: background .15s;
+    }
+    .token-item:last-child { border-bottom: none; }
+    .token-item:hover { background: var(--surface2); }
+
+    .token-icon {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem;
+      font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .token-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .token-info { flex: 1; min-width: 0; }
+    .token-name {
+      font-weight: 700;
+      font-size: .9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .token-address {
+      font-family: 'Space Mono', monospace;
+      font-size: .65rem;
+      color: var(--muted);
+    }
+    .token-amounts { text-align: right; }
+    .token-balance {
+      font-family: 'Space Mono', monospace;
+      font-size: .85rem;
+      font-weight: 700;
+    }
+    .token-usd {
+      font-size: .72rem;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* ── TX List ── */
+    .tx-list { list-style: none; }
+    .tx-item {
+      display: flex;
+      align-items: flex-start;
+      gap: .9rem;
+      padding: .9rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      transition: background .15s;
+    }
+    .tx-item:last-child { border-bottom: none; }
+    .tx-item:hover { background: var(--surface2); }
+
+    .tx-icon {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .tx-icon.send { background: rgba(239,68,68,.15); }
+    .tx-icon.receive { background: rgba(16,185,129,.15); }
+    .tx-icon.swap { background: rgba(124,58,237,.15); }
+    .tx-icon.other { background: rgba(246,201,14,.1); }
+
+    .tx-info { flex: 1; min-width: 0; }
+    .tx-type {
+      font-weight: 700;
+      font-size: .85rem;
+    }
+    .tx-sig {
+      font-family: 'Space Mono', monospace;
+      font-size: .62rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 220px;
+    }
+    .tx-time {
+      font-family: 'Space Mono', monospace;
+      font-size: .65rem;
+      color: var(--muted);
+      margin-top: .15rem;
+    }
+    .tx-amount {
+      text-align: right;
+      font-family: 'Space Mono', monospace;
+      font-size: .82rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .tx-amount.positive { color: var(--up); }
+    .tx-amount.negative { color: var(--down); }
+    .tx-amount.neutral { color: var(--muted); }
+
+    /* ── Skeleton ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 6px;
+    }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    .skeleton-row {
+      display: flex; align-items: center; gap: .9rem;
+      padding: .9rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .sk-circle { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
+    .sk-lines { flex: 1; }
+    .sk-line { height: 10px; margin-bottom: 6px; border-radius: 4px; }
+    .sk-line.short { width: 55%; }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Explorer Link ── */
+    .explorer-link {
+      font-family: 'Space Mono', monospace;
+      font-size: .7rem;
+      color: var(--accent);
+      text-decoration: none;
+      opacity: .75;
+      transition: opacity .2s;
+    }
+    .explorer-link:hover { opacity: 1; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-family: 'Space Mono', monospace;
+      font-size: .7rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">◈ <span>Krypton</span> · Wallet Dashboard</div>
+  <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+</header>
+
+<main>
+
+  <!-- Wallet Address Display -->
+  <section class="wallet-input-section">
+    <div class="wallet-input-label">Solana Wallet-Adresse</div>
+    <div class="current-address" id="currentAddress"></div>
+  </section>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card">
+      <div class="stat-label">SOL-Guthaben</div>
+      <div class="stat-value" id="solBalance">–</div>
+      <div class="stat-sub" id="solUsd">– USD</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Token Assets</div>
+      <div class="stat-value" id="tokenCount">–</div>
+      <div class="stat-sub">verschiedene SPL-Token</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Letzte Transaktionen</div>
+      <div class="stat-value" id="txCount">–</div>
+      <div class="stat-sub">der letzten 30 Tage</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Netzwerk</div>
+      <div class="stat-value" style="font-size:1.2rem; color:var(--accent2)">Solana</div>
+      <div class="stat-sub">Mainnet Beta</div>
+    </div>
+  </div>
+
+  <!-- Dashboard Grid -->
+  <div class="dashboard-grid">
+
+    <!-- Assets -->
+    <div class="panel" id="assetsPanel">
+      <div class="panel-header">
+        <span class="panel-title">Assets & Token</span>
+        <span class="panel-count" id="assetCount">–</span>
+      </div>
+      <ul class="token-list" id="tokenList">
+        <!-- skeletons -->
+        <li class="skeleton-row"><div class="skeleton sk-circle"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>
+        <li class="skeleton-row"><div class="skeleton sk-circle"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>
+        <li class="skeleton-row"><div class="skeleton sk-circle"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>
+      </ul>
+    </div>
+
+    <!-- Transactions -->
+    <div class="panel" id="txPanel">
+      <div class="panel-header">
+        <span class="panel-title">Transaktionen</span>
+        <span class="panel-count" id="txPanelCount">–</span>
+      </div>
+      <ul class="tx-list" id="txList">
+        <li class="skeleton-row"><div class="skeleton sk-circle" style="border-radius:8px"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>
+        <li class="skeleton-row"><div class="skeleton sk-circle" style="border-radius:8px"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>
+        <li class="skeleton-row"><div class="skeleton sk-circle" style="border-radius:8px"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>
+      </ul>
+    </div>
+  </div>
+</main>
+
+<footer>
+  Daten via Helius RPC &amp; Jupiter Price API · Öffentliche Blockchain-Daten · Kein Private Key erforderlich
+</footer>
+
+<script>
+  // ── Config ──
+  // Für den Produktiveinsatz: Helius API Key registrieren auf helius.dev (kostenloser Plan verfügbar)
+  const HELIUS_RPC = 'https://mainnet.helius-rpc.com/?api-key=32fe89bd-58dd-4958-bb27-8ec36076ba57';
+  const SOLANA_RPC = 'https://api.mainnet-beta.solana.com'; // Fallback (rate-limited)
+
+  const LAMPORTS = 1e9;
+
+  // Fest hinterlegte Wallet-Adresse
+  const FIXED_WALLET = 'HLukyiC7kZDqEVLh7rjYdup4qFu8HYBcFKPgjFRry3Ak';
+  let currentAddress = FIXED_WALLET;
+
+  // ── Util ──
+  function shortenAddress(a) {
+    return a ? a.slice(0,4) + '…' + a.slice(-4) : '';
+  }
+
+  function timeAgo(timestamp) {
+    const secs = Math.floor(Date.now() / 1000) - timestamp;
+    if (secs < 60) return `vor ${secs}s`;
+    if (secs < 3600) return `vor ${Math.floor(secs/60)}min`;
+    if (secs < 86400) return `vor ${Math.floor(secs/3600)}h`;
+    return `vor ${Math.floor(secs/86400)} Tagen`;
+  }
+
+  function showError(msg) {
+    const b = document.getElementById('errorBox');
+    b.textContent = '⚠ ' + msg;
+    b.classList.add('show');
+    setTimeout(() => b.classList.remove('show'), 6000);
+  }
+
+  // ── RPC Call ──
+  async function rpc(method, params, useHelius = true) {
+    const url = useHelius ? HELIUS_RPC : SOLANA_RPC;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.result;
+  }
+
+  // ── Load SOL Balance ──
+  async function getSolBalance(address) {
+    const result = await rpc('getBalance', [address, { commitment: 'confirmed' }], false);
+    return result.value / LAMPORTS;
+  }
+
+  // ── Load Token Accounts ──
+  async function getTokenAccounts(address) {
+    const result = await rpc('getTokenAccountsByOwner', [
+      address,
+      { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' },
+      { encoding: 'jsonParsed' }
+    ], false);
+    return result.value || [];
+  }
+
+  // ── Transactions via Helius ──
+  async function getTransactions(address) {
+    // Erst Signaturen holen
+    const sigs = await rpc('getSignaturesForAddress', [
+      address,
+      { limit: 20, commitment: 'confirmed' }
+    ], false);
+
+    if (!sigs || sigs.length === 0) return [];
+
+    // Parsed Transactions via Helius Enhanced API
+    try {
+      const res = await fetch(`https://api.helius.xyz/v0/transactions/?api-key=32fe89bd-58dd-4958-bb27-8ec36076ba57`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactions: sigs.slice(0, 15).map(s => s.signature) })
+      });
+      if (res.ok) {
+        const parsed = await res.json();
+        return parsed;
+      }
+    } catch(e) { /* Fallback auf Rohdaten */ }
+
+    // Fallback: Rohe Signatur-Liste
+    return sigs.slice(0, 15).map(s => ({
+      signature: s.signature,
+      blockTime: s.blockTime,
+      type: 'UNKNOWN',
+      err: s.err
+    }));
+  }
+
+  // ── Jupiter Preise ──
+  async function getPrices(mints) {
+    if (!mints.length) return {};
+    const ids = mints.join(',');
+    try {
+      const res = await fetch(`https://price.jup.ag/v6/price?ids=${ids}`);
+      const data = await res.json();
+      return data.data || {};
+    } catch { return {}; }
+  }
+
+  // ── Render Tokens ──
+  async function renderTokens(tokenAccounts, prices) {
+    const list = document.getElementById('tokenList');
+    const solBal = parseFloat(document.getElementById('solBalance').textContent) || 0;
+    const solPrice = prices['So11111111111111111111111111111111111111112']?.price || 0;
+
+    let html = '';
+
+    // SOL zuerst
+    html += `
+      <li class="token-item">
+        <div class="token-icon" style="background:linear-gradient(135deg,#9945ff,#14f195)">◎</div>
+        <div class="token-info">
+          <div class="token-name">Solana</div>
+          <div class="token-address">SOL · Native Token</div>
+        </div>
+        <div class="token-amounts">
+          <div class="token-balance">${solBal.toFixed(4)} SOL</div>
+          <div class="token-usd">${solPrice ? '$'+(solBal*solPrice).toFixed(2) : '–'} USD</div>
+        </div>
+      </li>`;
+
+    for (const acc of tokenAccounts) {
+      const info = acc.account?.data?.parsed?.info;
+      if (!info) continue;
+      const mint = info.mint;
+      const dec = info.tokenAmount?.decimals || 0;
+      const raw = parseInt(info.tokenAmount?.amount || '0');
+      const amount = raw / Math.pow(10, dec);
+      if (amount < 0.001) continue;
+
+      const price = prices[mint]?.price || 0;
+      const usdVal = price ? (amount * price).toFixed(2) : null;
+      const symbol = prices[mint]?.id?.slice(0,6) || shortenAddress(mint);
+
+      html += `
+        <li class="token-item">
+          <div class="token-icon">${symbol.slice(0,2).toUpperCase()}</div>
+          <div class="token-info">
+            <div class="token-name">${symbol.toUpperCase()}</div>
+            <div class="token-address">${shortenAddress(mint)}</div>
+          </div>
+          <div class="token-amounts">
+            <div class="token-balance">${amount.toLocaleString('de-DE', {maximumFractionDigits:4})}</div>
+            <div class="token-usd">${usdVal ? '$'+usdVal : '–'} USD</div>
+          </div>
+        </li>`;
+    }
+
+    if (!tokenAccounts.length && solBal === 0) {
+      html = `<li style="padding:2rem;text-align:center;color:var(--muted);font-size:.85rem">Keine Assets gefunden</li>`;
+    }
+
+    list.innerHTML = html;
+    const count = tokenAccounts.filter(a => {
+      const amt = parseInt(a.account?.data?.parsed?.info?.tokenAmount?.amount || '0');
+      return amt > 0;
+    }).length + 1; // +1 for SOL
+    document.getElementById('assetCount').textContent = count;
+    document.getElementById('tokenCount').textContent = count;
+  }
+
+  // ── Render TXs ──
+  function renderTxs(txs) {
+    const list = document.getElementById('txList');
+    if (!txs.length) {
+      list.innerHTML = `<li style="padding:2rem;text-align:center;color:var(--muted);font-size:.85rem">Keine Transaktionen gefunden</li>`;
+      return;
+    }
+
+    const typeMap = {
+      'SWAP': { icon: '⇄', cls: 'swap', label: 'Swap' },
+      'TRANSFER': { icon: '↑', cls: 'send', label: 'Transfer' },
+      'TOKEN_MINT': { icon: '✦', cls: 'other', label: 'Mint' },
+      'NFT_SALE': { icon: '◈', cls: 'other', label: 'NFT Sale' },
+      'UNKNOWN': { icon: '·', cls: 'other', label: 'Transaktion' },
+    };
+
+    let html = '';
+    for (const tx of txs.slice(0, 12)) {
+      const type = tx.type || 'UNKNOWN';
+      const t = typeMap[type] || typeMap['UNKNOWN'];
+      const sig = tx.signature || '';
+      const time = tx.blockTime ? timeAgo(tx.blockTime) : '–';
+      const err = tx.err || tx.transactionError;
+      const fee = tx.fee ? (tx.fee / LAMPORTS).toFixed(5) : null;
+
+      // Versuche Betrag aus nativeTransfers zu lesen
+      let amountHtml = '';
+      if (tx.nativeTransfers && tx.nativeTransfers.length > 0) {
+        const nt = tx.nativeTransfers[0];
+        const dir = nt.toUserAccount === currentAddress ? 'positive' : 'negative';
+        const sign = dir === 'positive' ? '+' : '-';
+        const val = (Math.abs(nt.amount) / LAMPORTS).toFixed(4);
+        amountHtml = `<div class="tx-amount ${dir}">${sign}${val} SOL</div>`;
+      } else if (type === 'SWAP') {
+        amountHtml = `<div class="tx-amount neutral">Swap</div>`;
+      } else if (fee) {
+        amountHtml = `<div class="tx-amount neutral">Fee: ${fee} SOL</div>`;
+      }
+
+      html += `
+        <li class="tx-item">
+          <div class="tx-icon ${t.cls}">${t.icon}</div>
+          <div class="tx-info">
+            <div class="tx-type">${t.label}${err ? ' ❌' : ''}</div>
+            <div class="tx-sig">${sig}</div>
+            <div class="tx-time">${time} · <a class="explorer-link" href="https://solscan.io/tx/${sig}" target="_blank">↗ Explorer</a></div>
+          </div>
+          ${amountHtml}
+        </li>`;
+    }
+
+    list.innerHTML = html;
+    document.getElementById('txPanelCount').textContent = txs.length;
+    document.getElementById('txCount').textContent = txs.length;
+  }
+
+  // ── Main Load ──
+  async function loadWallet() {
+    const input = FIXED_WALLET;
+    currentAddress = input;
+
+    document.getElementById('currentAddress').innerHTML =
+      `Wallet: <strong>${input}</strong> · <a class="explorer-link" href="https://solscan.io/account/${input}" target="_blank">↗ Solscan</a>`;
+
+    // Reset UI
+    document.getElementById('solBalance').textContent = '…';
+    document.getElementById('solUsd').textContent = '…';
+    document.getElementById('tokenCount').textContent = '…';
+    document.getElementById('txCount').textContent = '…';
+
+    const skRow = () => `<li class="skeleton-row"><div class="skeleton sk-circle"></div><div class="sk-lines"><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div></li>`;
+    document.getElementById('tokenList').innerHTML = skRow()+skRow()+skRow();
+    document.getElementById('txList').innerHTML = skRow()+skRow()+skRow();
+
+    // Panels sichtbar machen
+    document.getElementById('statsRow').classList.add('loaded');
+    document.getElementById('assetsPanel').classList.add('loaded');
+    document.getElementById('txPanel').classList.add('loaded');
+
+    try {
+      // Parallel laden
+      const [solBalance, tokenAccounts, txs] = await Promise.all([
+        getSolBalance(input),
+        getTokenAccounts(input),
+        getTransactions(input)
+      ]);
+
+      document.getElementById('solBalance').textContent = solBalance.toFixed(4) + ' SOL';
+
+      // Mints für Preis-Abfrage sammeln
+      const mints = [
+        'So11111111111111111111111111111111111111112', // SOL
+        ...tokenAccounts.map(a => a.account?.data?.parsed?.info?.mint).filter(Boolean)
+      ];
+
+      const prices = await getPrices(mints.slice(0, 50));
+
+      const solPrice = prices['So11111111111111111111111111111111111111112']?.price;
+      document.getElementById('solUsd').textContent = solPrice
+        ? '≈ $' + (solBalance * solPrice).toFixed(2) + ' USD'
+        : '– USD';
+
+      renderTokens(tokenAccounts, prices);
+      renderTxs(txs);
+
+    } catch(e) {
+      console.error(e);
+      showError('Fehler beim Laden der Wallet-Daten: ' + e.message + ' — Bitte Helius API Key in HELIUS_RPC eintragen.');
+      document.getElementById('tokenList').innerHTML = `<li style="padding:2rem;text-align:center;color:var(--muted);font-size:.85rem">Fehler beim Laden</li>`;
+      document.getElementById('txList').innerHTML = `<li style="padding:2rem;text-align:center;color:var(--muted);font-size:.85rem">Fehler beim Laden</li>`;
+    }
+  }
+
+  // Auto-load on start
+  loadWallet();
+
+  // Auto-refresh alle 60 Sekunden
+  setInterval(loadWallet, 60000);
+</script>
+</body>
+</html>

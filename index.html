@@ -760,7 +760,7 @@
     // [169..177] collateralUsd (u64, 6 decimals)
     // [177..185] realisedPnlUsd (i64, 6 decimals)
 
-    if (data.length < 201) return null; // 185 + 16 bytes fuer cumulativeInterestSnapshot
+    if (data.length < 185) return null;
 
     const view = new DataView(data.buffer, data.byteOffset);
 
@@ -780,12 +780,6 @@
     const collateralUsd = Number(view.getBigUint64(169, true)) / USD_DEC;
     const realisedPnl   = Number(view.getBigInt64(177, true))  / USD_DEC;
 
-    // cumulativeInterestSnapshot: u128 LE ab Offset 185 (16 Bytes)
-    // Wir lesen als zwei u64 (lo + hi) und kombinieren zu BigInt
-    const snapLo = view.getBigUint64(185, true);
-    const snapHi = view.getBigUint64(193, true);
-    const cumulativeInterestSnapshot = snapLo + (snapHi << 64n);
-
     if (sizeUsd === 0) return null;
 
     const custodyInfo = CUSTODY_MAP[custodyKey] || CUSTODY_MAP[collCustodyKey] || { symbol: '???', decimals: 6 };
@@ -800,7 +794,6 @@
       sizeUsd,
       collateralUsd,
       realisedPnlUsd: realisedPnl,
-      cumulativeInterestSnapshot,
     };
   }
 
@@ -839,131 +832,6 @@
     for (let i = digits.length - 1; i >= 0; i--) str += ALPHABET[digits[i]];
     return str;
   }
-  // ─── Borrow Fee: Pool-Account cumulativeInterestRate laden ───
-  //
-  // Korrekte Formel (offizielle Jupiter-Doku):
-  //   borrowFeeUsd = (cumulativeInterestRate - cumulativeInterestSnapshot)
-  //                  * sizeUsd / 10^RATE_DECIMALS / 10^USD_DECIMALS
-  //   RATE_DECIMALS = 9, USD_DECIMALS = 6  →  Divisor = 10^15
-  //
-  // cumulativeInterestRate liegt im POOL-Account (nicht Custody!),
-  // und zwar pro Custody separat im custodies[]-Array des Pool-Accounts.
-  //
-  // Pool-Account: 5BUwFW4nRbftYTDMbgxykoFWqWHPzahFSNAaaaJtVKsq
-  //
-  // Pool-Account Layout (Anchor IDL, vereinfacht):
-  // [0..8]    discriminator
-  // [8..40]   name (String mit 4-Byte-Länge + Bytes, max 32 Zeichen → 4+32 = 36 Bytes)
-  // [44..76]  custodies: Vec<Pubkey> (4-Byte-Länge + n×32 Bytes)
-  //           5 Custodies × 32 = 160 Bytes + 4 = 164  → bis Byte 208
-  // Danach folgen pro Custody in ratios[]: Vec<TokenRatios> (5 × 32 = ~164 Bytes)
-  // Dann aumUsd, limit, fees, padding...
-  // fundingRateState per Custody ist NICHT im Pool, sondern doch im Custody-Account.
-  //
-  // Nach Analyse des echten IDL (Stand 2024/2025):
-  // Der Pool-Account hat ein Feld `fundingRateState` das ein Array pro Custody enthält.
-  // Jedes Element: { cumulativeInterestRate: u128, lastUpdate: i64, hourlyFundingDbps: u64 }
-  // = 16 + 8 + 8 = 32 Bytes pro Custody.
-  //
-  // Für den direkten Binär-Ansatz nutzen wir getAccountInfo mit jsonParsed
-  // auf den bekannten Custody-Accounts und lesen fundingRateState.cumulativeInterestRate.
-  //
-  // Custody-Account Layout (nach Anchor-IDL, akkurat):
-  // [0..8]    discriminator                   (8)
-  // [8..40]   pool pubkey                     (32)
-  // [40..72]  mint pubkey                     (32)
-  // [72..104] tokenAccount pubkey             (32)
-  // [104..136] oracle pubkey                  (32)
-  // [136..137] decimals u8                    (1)
-  // [137..138] isStable bool                  (1)
-  // [138..146] oracle conf: OracleParams(8)   (8)  ← oracle_type u8 + max_deviation u64
-  // [146..242] pricing: PricingParams         (96) ← 12×u64
-  // [242..250] permissions: Permissions       (8)  ← 8×bool
-  // [250..258] targetRatioBps u64             (8)
-  // [258..298] assets: Assets                 (40) ← 5×u64
-  // [298..330] fundingRateState: FundingRateState
-  //              cumulativeInterestRate u128  (16)  ← Offset 298
-  //              lastUpdate i64               (8)   ← Offset 314
-  //              hourlyFundingDbps u64        (8)   ← Offset 322
-  const CUSTODY_FUNDING_RATE_OFFSET = 298;
-  // Divisor: 10^RATE_DECIMALS × 10^USD_DECIMALS = 10^9 × 10^6 = 10^15
-  const BORROW_FEE_DIVISOR = BigInt('1000000000000000'); // 10^15
-
-  async function fetchCustodyCumulativeRates(custodyKeys) {
-    const unique = [...new Set(custodyKeys.filter(Boolean))];
-    if (!unique.length) return {};
-
-    try {
-      const res = await fetch(HELIUS_RPC, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0', id: 1,
-          method: 'getMultipleAccounts',
-          params: [ unique, { encoding: 'base64', commitment: 'confirmed' } ]
-        })
-      });
-      const json = await res.json();
-      if (!json.result?.value) return {};
-
-      const rates = {};
-      for (let i = 0; i < unique.length; i++) {
-        const acct = json.result.value[i];
-        if (!acct?.data?.[0]) { console.warn('No data for custody:', unique[i]); continue; }
-        try {
-          const raw  = Uint8Array.from(atob(acct.data[0]), c => c.charCodeAt(0));
-          console.log('Custody account size:', raw.length, 'for', unique[i]);
-          if (raw.length < CUSTODY_FUNDING_RATE_OFFSET + 16) {
-            console.warn('Custody account too small:', raw.length);
-            continue;
-          }
-          const view = new DataView(raw.buffer, raw.byteOffset);
-          const lo = view.getBigUint64(CUSTODY_FUNDING_RATE_OFFSET, true);
-          const hi = view.getBigUint64(CUSTODY_FUNDING_RATE_OFFSET + 8, true);
-          const rate = lo + (hi << 64n);
-          console.log('Custody rate for', unique[i], ':', rate.toString());
-          rates[unique[i]] = rate;
-        } catch(e) {
-          console.warn('Custody decode error for', unique[i], e);
-        }
-      }
-      return rates;
-    } catch(e) {
-      console.error('fetchCustodyCumulativeRates error:', e);
-      return {};
-    }
-  }
-
-  function calculateBorrowFee(pos, custodyCumulativeRates) {
-    const custodyRate = custodyCumulativeRates[pos.custodyKey];
-    if (custodyRate === undefined) {
-      console.warn('No custody rate for:', pos.custodyKey);
-      return 0;
-    }
-    if (!pos.cumulativeInterestSnapshot || pos.sizeUsd <= 0) return 0;
-
-    try {
-      const positionInterest = custodyRate - pos.cumulativeInterestSnapshot;
-      console.log('Position interest delta:', positionInterest.toString(), 'for', pos.market, pos.side);
-      if (positionInterest <= 0n) return 0;
-
-      // sizeUsd als BigInt in atomaren USD-Einheiten (6 Dezimalstellen)
-      const sizeUsdAtomic = BigInt(Math.round(pos.sizeUsd * 1_000_000));
-
-      // borrowFeeUsd = (borrowRate × sizeUsd) / (10^RATE_DECIMALS × 10^USD_DECIMALS)
-      // = (positionInterest × sizeUsdAtomic) / 10^15  →  dann noch / 10^6 = USD
-      const borrowFeeScaled = positionInterest * sizeUsdAtomic;
-      const borrowFeeAtomic = borrowFeeScaled / BORROW_FEE_DIVISOR;
-
-      const borrowFeeUsd = Number(borrowFeeAtomic) / 1_000_000;
-      console.log('Borrow fee USD:', borrowFeeUsd, 'for', pos.market, pos.side);
-      return borrowFeeUsd;
-    } catch(e) {
-      console.warn('BorrowFee calc error:', e);
-      return 0;
-    }
-  }
-
   async function getLimitOrders(addr) {
     const urls = [
       `https://api.jup.ag/limit/v2/openOrders?wallet=${addr}`,
@@ -1176,7 +1044,7 @@
     'BTC': '3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh',
   };
 
-  function renderPerpPositions(positions, cacheData, prices, custodyCumulativeRates={}) {
+  function renderPerpPositions(positions, cacheData, prices) {
     const list = document.getElementById('perpList');
     if (!positions||!positions.length) {
       const h=`<li class="empty-state">Keine offenen Perp-Positionen</li>`;
@@ -1219,10 +1087,7 @@
           : entryPrice * (1 + liqDelta);
       }
 
-      // Borrow Fee berechnen und abziehen
-      const borrowFee = calculateBorrowFee(pos, custodyCumulativeRates);
-
-      const posCurrentValue = collateralUsd + unrealizedPnl - borrowFee;
+      const posCurrentValue = collateralUsd + unrealizedPnl;
       totalSizeUsd += posCurrentValue;
       totalPnl += unrealizedPnl;
       const pnlCls = unrealizedPnl >= 0 ? 'positive' : 'negative';
@@ -1243,8 +1108,7 @@
             <div><div class="pos-detail-label">Liq. (ca.)</div><div class="pos-detail-value" style="color:var(--down)">${liqPrice?fmtUsd(liqPrice):'–'}</div></div>
             <div><div class="pos-detail-label">Hebel</div><div class="pos-detail-value">${leverage}x</div></div>
             <div><div class="pos-detail-label">Sicherheit</div><div class="pos-detail-value">${fmtUsd(collateralUsd)}</div></div>
-            <div><div class="pos-detail-label">Borrow Fee</div><div class="pos-detail-value" style="color:var(--down)">${borrowFee>0?'-'+fmtUsd(borrowFee):'–'}</div></div>
-            <div><div class="pos-detail-label">Zeitwert</div><div class="pos-detail-value" style="${posCurrentValue>=0?'color:var(--up)':'color:var(--down)'}">${fmtUsd(posCurrentValue)}</div></div>
+
           </div>
         </li>`;
     }
@@ -1380,19 +1244,8 @@
         getLimitOrders(addr)
       ]);
 
-      // Custody-Accounts fuer Borrow-Fee laden (gebatchelt, ein RPC-Call)
-      let custodyCumulativeRates = {};
-      if (perpPositions.length > 0) {
-        const custodyKeys = [...new Set(perpPositions.map(p => p.custodyKey).filter(Boolean))];
-        console.log('Loading custody rates for:', custodyKeys);
-        custodyCumulativeRates = await fetchCustodyCumulativeRates(custodyKeys);
-        console.log('Custody rates loaded:', JSON.stringify(
-          Object.fromEntries(Object.entries(custodyCumulativeRates).map(([k,v])=>[k,v.toString()]))
-        ));
-      }
-
       renderTxs(txs, cacheData);
-      const perpResult = renderPerpPositions(perpPositions, cacheData, prices, custodyCumulativeRates);
+      const perpResult = renderPerpPositions(perpPositions, cacheData, prices);
       await renderLimitOrders(limitOrders, cacheData);
 
       // Portfolio-Gesamtwert inkl. Perp-Positionen neu berechnen

@@ -452,7 +452,8 @@
       <div class="stat-card clickable" onclick="showPage('detail')">
         <div class="stat-label">Jupiter Perpetuals <span class="jup-badge">JUP</span> <span class="stat-arrow">→</span></div>
         <div class="stat-value" id="perpCount">–</div>
-        <div class="stat-sub" id="perpPnl">Gesamt PnL</div>
+        <div class="stat-sub" id="perpSizeUsd">– USD Positionsgrösse</div>
+        <div class="stat-sub" id="perpPnl" style="margin-top:.25rem">Gesamt PnL</div>
       </div>
 
       <!-- Limit Orders (klickbar → Detail) -->
@@ -640,6 +641,7 @@
       document.getElementById('perpPanelCount').textContent = c.perpCount;
     }
     if (c.perpPnlHtml)    document.getElementById('perpPnl').innerHTML         = c.perpPnlHtml;
+    if (c.perpSizeUsd != null) document.getElementById('perpSizeUsd').textContent = fmtUsd(c.perpSizeUsd)+' Positionsgrösse';
     if (c.orderCount    != null) {
       document.getElementById('orderCount').textContent       = c.orderCount;
       document.getElementById('ordersPanelCount').textContent = c.orderCount;
@@ -1052,7 +1054,7 @@
       cacheData.perpListHtml=h; cacheData.perpCount=0; cacheData.perpPnlHtml='Keine offenen Positionen';
       return;
     }
-    let html=''; let totalPnl=0;
+    let html=''; let totalPnl=0; let totalSizeUsd=0;
     for (const pos of positions) {
       const market = pos.market || '–';
       const side   = (pos.side || 'long').toLowerCase();
@@ -1084,6 +1086,7 @@
           : entryPrice * (1 + liqDelta);
       }
 
+      totalSizeUsd += sizeUsd;
       totalPnl += unrealizedPnl;
       const pnlCls = unrealizedPnl >= 0 ? 'positive' : 'negative';
 
@@ -1109,10 +1112,16 @@
     list.innerHTML=html;
     document.getElementById('perpCount').textContent=positions.length;
     document.getElementById('perpPanelCount').textContent=positions.length;
+    document.getElementById('perpSizeUsd').textContent = fmtUsd(totalSizeUsd)+' Positionsgrösse';
     const pStyle=totalPnl>=0?'color:var(--up)':'color:var(--down)';
     const pHtml=`<span style="${pStyle}">PnL: ${totalPnl>=0?'+':''}${fmtUsd(totalPnl)}</span>`;
     document.getElementById('perpPnl').innerHTML=pHtml;
-    cacheData.perpListHtml=html; cacheData.perpCount=positions.length; cacheData.perpPnlHtml=pHtml;
+    cacheData.perpListHtml=html;
+    cacheData.perpCount=positions.length;
+    cacheData.perpPnlHtml=pHtml;
+    cacheData.perpSizeUsd=totalSizeUsd;
+    cacheData.perpTotalPnl=totalPnl;
+    return { totalSizeUsd, totalPnl };
   }
 
   // ─── Render: Limit Orders ───
@@ -1233,8 +1242,19 @@
       ]);
 
       renderTxs(txs, cacheData);
-      renderPerpPositions(perpPositions, cacheData, prices);
+      const perpResult = renderPerpPositions(perpPositions, cacheData, prices);
       await renderLimitOrders(limitOrders, cacheData);
+
+      // Portfolio-Gesamtwert inkl. Perp-Positionen neu berechnen
+      if (perpResult && perpResult.totalSizeUsd > 0) {
+        const prevTotal = cacheData.portfolioTotal || 0;
+        const newTotal  = prevTotal + perpResult.totalSizeUsd;
+        document.getElementById('portfolioTotal').textContent = fmtUsd(newTotal);
+        document.getElementById('portfolioSub').textContent   =
+          (cacheData.portfolioSub || '') + ' · Perps ' + fmtUsd(perpResult.totalSizeUsd);
+        cacheData.portfolioTotal = newTotal;
+        cacheData.portfolioSub   = cacheData.portfolioSub + ' · Perps ' + fmtUsd(perpResult.totalSizeUsd);
+      }
 
       saveCache(cacheData);
 

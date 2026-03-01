@@ -833,18 +833,28 @@
     return str;
   }
   async function getLimitOrders(addr) {
+    // Neue Trigger API (ersetzt /limit/v2 – deprecated)
+    // Parameter: user=<wallet>&orderStatus=active
+    // Antwort: { orders: [...], hasMoreData: bool }
+    // Felder pro Order: inputMint, outputMint, makingAmount, takingAmount,
+    //                   borrowMakingAmount, createdAt, expiredAt, updatedAt,
+    //                   status, oriMakingAmount, oriTakingAmount, ...
     const urls = [
-      `https://api.jup.ag/limit/v2/openOrders?wallet=${addr}`,
-      `https://jup.ag/api/limit/v1/openOrders?wallet=${addr}`,
+      `https://api.jup.ag/trigger/v1/getTriggerOrders?user=${addr}&orderStatus=active`,
+      `https://lite-api.jup.ag/trigger/v1/getTriggerOrders?user=${addr}&orderStatus=active`,
     ];
     for (const url of urls) {
       try {
-        const res = await fetch(url,{headers:{'Accept':'application/json'}});
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
         if (res.ok) {
           const d = await res.json();
-          return Array.isArray(d)?d:(d.orders||d.data||[]);
+          // Neue API: { orders: [...] }
+          // Alte API (Fallback): Array oder { data: [...] }
+          const orders = d.orders || (Array.isArray(d) ? d : d.data || []);
+          console.log('Trigger orders raw:', JSON.stringify(orders).slice(0, 300));
+          return orders;
         }
-      } catch(e){}
+      } catch(e) { console.warn('getLimitOrders error:', e); }
     }
     return [];
   }
@@ -1142,22 +1152,40 @@
     const prices = mints.length ? await getPrices(mints) : {};
     let html='';
     for (const order of orders) {
-      const inMint  = order.inputMint||order.inMint||'';
-      const outMint = order.outputMint||order.outMint||'';
-      const inSym   = prices[inMint]?.id  ||shortenAddr(inMint);
-      const outSym  = prices[outMint]?.id ||shortenAddr(outMint);
-      const inDec   = order.inputDecimals ||6;
-      const outDec  = order.outputDecimals||6;
-      const inAmt   = parseFloat(order.inAmount||order.makingAmount||order.inputAmount||0);
-      const outAmt  = parseFloat(order.outAmount||order.takingAmount||order.outputAmount||0);
-      const filled  = parseFloat(order.filledInAmount||order.filledMakingAmount||0);
-      const inH     = (inAmt / Math.pow(10,inDec)).toFixed(4);
-      const outH    = (outAmt/ Math.pow(10,outDec)).toFixed(4);
-      const fillPct = inAmt>0?Math.round((filled/inAmt)*100):0;
-      const lim     = outH>0&&inH>0?(parseFloat(outH)/parseFloat(inH)).toFixed(6):'–';
-      const curPx   = prices[inMint]?.price?.toFixed(6)||'–';
-      const expAt   = order.expiredAt||order.expiresAt;
-      const expiry  = expAt?new Date(expAt*1000).toLocaleDateString('de-DE'):'–';
+      const inMint  = order.inputMint  || order.inMint  || '';
+      const outMint = order.outputMint || order.outMint || '';
+      const inSym   = prices[inMint]?.id  || shortenAddr(inMint);
+      const outSym  = prices[outMint]?.id || shortenAddr(outMint);
+
+      // Neue Trigger API: makingAmount/takingAmount sind die RESTLICHEN Beträge (noch offen)
+      //                   oriMakingAmount/oriTakingAmount sind die Originalbeträge
+      // Alte API:         inAmount/outAmount
+      const oriIn   = parseFloat(order.oriMakingAmount || order.inAmount  || order.makingAmount  || 0);
+      const oriOut  = parseFloat(order.oriTakingAmount || order.outAmount || order.takingAmount  || 0);
+      const remIn   = parseFloat(order.makingAmount    || order.inAmount  || oriIn);
+
+      // Decimals: neue API liefert inputDecimals/outputDecimals, sonst aus Mint bekannt
+      const inDec   = order.inputDecimals  || (inMint  === 'So11111111111111111111111111111111111111112' ? 9 : 6);
+      const outDec  = order.outputDecimals || (outMint === 'So11111111111111111111111111111111111111112' ? 9 : 6);
+
+      const oriInH  = (oriIn  / Math.pow(10, inDec)).toFixed(4);
+      const oriOutH = (oriOut / Math.pow(10, outDec)).toFixed(4);
+
+      // Füllungsgrad: (original - remaining) / original
+      const filledIn = oriIn - remIn;
+      const fillPct  = oriIn > 0 ? Math.min(100, Math.round((filledIn / oriIn) * 100)) : 0;
+
+      // Limit-Preis: outputAmount / inputAmount (Preis in outputMint pro inputMint)
+      const lim    = oriOutH > 0 && oriInH > 0
+        ? (parseFloat(oriOutH) / parseFloat(oriInH)).toFixed(6) : '–';
+      const curPx  = prices[inMint]?.price?.toFixed(6) || '–';
+
+      const expAt  = order.expiredAt || order.expiresAt;
+      const expiry = expAt ? new Date(expAt * 1000).toLocaleDateString('de-DE') : '–';
+
+      // Anzeige-Beträge: Original
+      const inH  = oriInH;
+      const outH = oriOutH;
       html += `
         <li class="order-item">
           <div class="order-header">
